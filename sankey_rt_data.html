@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankey Chart – การส่งผู้ป่วยตามเขต</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', 'Noto Sans Thai', sans-serif; background: #f8f7f4; color: #2c2c2a; }
+  header { padding: 24px 32px 16px; border-bottom: 1px solid #e0ddd6; background: #fff; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header p { font-size: 13px; color: #888; margin-top: 4px; }
+  .controls { display: flex; gap: 12px; padding: 12px 32px; background: #fff; border-bottom: 1px solid #e0ddd6; flex-wrap: wrap; align-items: center; }
+  .controls label { font-size: 13px; color: #666; }
+  .controls select { font-size: 13px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 6px; background: #fff; }
+  .controls input[type=range] { width: 140px; }
+  .controls span { font-size: 13px; font-weight: 500; min-width: 30px; }
+  #chart-wrap { padding: 24px 32px; overflow-x: auto; }
+  .tooltip { position: fixed; pointer-events: none; background: #fff; border: 1px solid #ddd;
+    border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.6;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 9999; max-width: 260px; opacity: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px 32px 20px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #555; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  .stat-bar { display: flex; gap: 20px; padding: 10px 32px; background: #fff; border-bottom: 1px solid #e0ddd6; }
+  .stat { font-size: 12px; color: #888; }
+  .stat b { font-size: 15px; color: #333; display: block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sankey Chart – การส่งผู้ป่วยตามเขต Primary</h1>
+  <p>Source: primary_hos_rgn (เขต 1–13) → Target: HNAME เรียงตาม NHSO_ZONE</p>
+</header>
+<div class="stat-bar">
+  <div class="stat"><b id="stat-total">-</b>จำนวน case ทั้งหมด</div>
+  <div class="stat"><b id="stat-src">13</b>เขต source</div>
+  <div class="stat"><b id="stat-tgt">-</b>โรงพยาบาล</div>
+  <div class="stat"><b id="stat-links">-</b>เส้นทาง flow</div>
+</div>
+<div class="controls">
+  <label>Filter เขต source:</label>
+  <select id="filter-src"><option value="all">ทั้งหมด (1–13)</option></select>
+  <label style="margin-left:12px;">แสดง flow ขั้นต่ำ:</label>
+  <input type="range" id="thresh" min="0" max="200" value="0" step="5">
+  <span id="thresh-val">0</span>
+</div>
+<div class="legend" id="legend"></div>
+<div id="chart-wrap"><svg id="sankey-svg"></svg></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = {"labels":["1","2","3","4","5","6","7","8","9","10","11","12","13","รพ.นครพิงค์","รพ.มหาราชนครเชียงใหม่  มหาวิทยาลัยเชียงใหม่","รพ.มะเร็งลำปาง","รพ.เชียงรายประชานุเคราะห์","รพ.ทั่วไปขนาดเล็กรังสีรักษาและเวชศาสตร์นิวเคลียร์ พิษณุโลก","รพ.พุทธชินราช","รพ.มหาวิทยาลัยนเรศวร","รพ.สวรรค์ประชารักษ์","รพ.ธรรมศาสตร์เฉลิมพระเกียรติ","รพ.มหาวชิราลงกรณ ธัญบุรี","รพ.มะเร็งลพบุรี","รพ.เฉพาะทางมะเร็งขนาดเล็กรังสีรักษา ราชธานี","รพ.ราชบุรี","รพ.สมุทรสาคร","รพ.สินแพทย์ นครปฐม โรงพยาบาลทั่วไปขนาดใหญ่","รพ.ทั่วไปขนาดใหญ่จุฬารัตน์ 3 อินเตอร์","รพ.พระปกเกล้า","รพ.มะเร็งกรุงเทพระยอง โรงพยาบาลเฉพาะทางมะเร็งขนาดเล็ก","รพ.มะเร็งชลบุรี","รพ.เฉพาะทางมะเร็ง วิภารามอมตะนครขนาดเล็ก","รพ.เฉพาะทางมะเร็งขนาดเล็กแคนเซอร์อลิอันซ์ ศรีราชา","วิภาราม สมุทรปราการ โรงพยาบาลทั่วไปขนาดเล็ก","รพ.ขอนแก่น","รพ.ร้อยเอ็ด","รพ.ศรีนครินทร์ มหาวิทยาลัยขอนแก่น","รพ.มะเร็งอุดรธานี","รพ.สกลนคร","รพ.มหาราชนครราชสีมา","รพ.สุรินทร์","รพ.มะเร็งอุบลราชธานี","รพ.มหาราชนครศรีธรรมราช","รพ.มะเร็งสุราษฎร์ธานี","รพ.สงขลานครินทร์  มหาวิทยาลัยสงขลานครินทร์","รพ.หาดใหญ่","รพ.จุฬาภรณ์","รพ.จุฬาลงกรณ์สภากาชาดไทย","รพ.พระมงกุฎเกล้า","รพ.ภูมิพลอดุลยเดช","รพ.มงกุฎวัฒนะ","รพ.ราชวิถี","รพ.รามาธิบดี  มหาวิทยาลัยมหิดล","รพ.วชิรโรงพยาบาล คณะแพทยศาสตร์วชิรพยาบาล มหาวิทยาลัยนวมินทราธิราช","รพ.วัฒโนสถโรงพยาบาลเฉพาะทางโรคมะเร็งขนาดกลาง","รพ.ศิริราช","รพ.เฉพาะทางมะเร็งกรุงเทพขนาดเล็ก","สถาบันมะเร็งแห่งชาติ"],"src":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12],"tgt":[35,47,48,13,29,50,51,43,14,31,23,15,42,25,53,54,56,45,20,41,32,57,33,16,58,35,47,48,17,28,21,49,18,51,40,14,22,19,31,23,15,38,52,53,54,56,20,41,32,57,16,58,47,48,17,28,21,13,18,51,22,19,31,23,15,52,53,55,56,39,20,41,32,57,33,34,58,47,48,28,21,13,49,50,51,40,22,31,23,44,38,42,52,53,36,54,55,56,41,32,57,24,33,16,34,58,35,47,48,28,21,29,49,50,51,40,43,22,31,23,44,42,25,52,53,54,55,56,45,26,27,41,32,57,24,33,34,58,35,47,48,28,21,13,29,49,18,50,51,40,14,22,30,31,23,38,42,52,53,36,54,55,56,39,26,41,32,57,33,16,34,58,35,47,48,21,50,51,40,22,31,38,42,53,36,37,56,39,27,41,32,57,58,35,47,48,40,31,23,44,38,42,53,36,37,56,39,26,41,32,57,58,35,47,48,28,21,29,50,51,40,22,31,23,38,42,52,53,36,54,37,56,41,32,57,33,34,58,35,47,48,21,29,49,51,40,23,15,38,42,52,53,36,54,37,56,39,41,32,33,58,47,48,21,29,50,51,40,43,14,31,44,25,52,53,36,54,55,56,45,46,57,24,33,16,34,58,35,47,48,21,43,44,53,56,45,26,46,32,57,34,58,35,47,48,28,21,13,29,49,50,51,40,43,14,22,31,23,44,42,25,52,53,36,54,55,56,39,26,20,41,32,57,33,34,58],"val":[1,5,7,485,1,1,5,1,642,2,1,963,1,1,2,1,5,1,1,1,1,1,2,753,6,12,9,16,430,1,4,1,190,3,1,20,2,91,3,145,109,1,9,8,1,10,3,2,1,3,1,13,19,29,8,1,8,1,3,4,2,127,4,362,1,18,22,2,18,1,1058,1,2,10,1,16,15,108,112,2,285,1,3,15,534,8,582,3,1069,1,1,1,125,67,3,8,4,107,1,4,44,166,2,2,6,155,1,46,126,1,6,2,4,4,8,4,1,20,3,254,1,2,751,67,57,7,14,396,1,939,169,1,122,48,54,1,198,89,1,24,301,357,17,2,887,5,1,2,5,8,1,105,315,1124,2,2,4,86,106,2,3,11,81,3,1,4,584,49,411,2,96,101,1138,5,5,1,1,1,6,1,2,8,7,5,995,122,4,7,1,3,1,1,5,8,4,12,2,1,2,1,1724,10,2,2,58,6,936,1,1,2,4,2,70,12,37,1,4,2,2,3,2213,3,1,5,1,3,3,24,5,1,84,17,1048,4,2,1,1,9,2,2,13,2,1,3,1,2,1,1,2,2059,4,6,10,1,7,7,1,5,1,1,3,18,42,3,1,4,3,1,901,1,1,935,1,18,36,1,2,1,49,355,4,8,1,1,1,23,14,1,3,10,1,30,2,1,8,949,1,887,1,1,1,1,2,139,1176,97,18,2,1,48,171,226,3,1,2,116,7,1,1,2,1,262,308,4,363,32,647,1,15,1,2,6,486,2,14,302],"tgt_zones":[1,1,1,1,2,2,2,3,4,4,4,4,5,5,5,6,6,6,6,6,6,6,7,7,7,8,8,9,9,10,11,11,12,12,13,13,13,13,13,13,13,13,13,13,13,13]};
+
+const nSrc = 13;
+const labels = DATA.labels;
+const tgtZones = DATA.tgt_zones;
+const srcColors = d3.schemeTableau10;
+const zoneColors = {1:'#4e79a7',2:'#1D9E75',3:'#D85A30',4:'#D4537E',5:'#7F77DD',6:'#BA7517',7:'#639922',8:'#E24B4A',9:'#0F6E56',10:'#993C1D',11:'#533AB7',12:'#c27ba0',13:'#888780'};
+const nTgt = labels.length - nSrc;
+
+// Populate filter
+const sel = document.getElementById('filter-src');
+for (let i = 1; i <= nSrc; i++) {
+  const o = document.createElement('option'); o.value = i-1; o.textContent = `เขต ${i}`; sel.appendChild(o);
+}
+
+const tooltip = document.getElementById('tooltip');
+let threshVal = 0;
+let filterSrc = 'all';
+
+document.getElementById('thresh').addEventListener('input', function() {
+  threshVal = +this.value;
+  document.getElementById('thresh-val').textContent = this.value;
+  draw();
+});
+sel.addEventListener('change', function() {
+  filterSrc = this.value === 'all' ? 'all' : +this.value;
+  draw();
+});
+
+function draw() {
+  const svg = d3.select('#sankey-svg');
+  svg.selectAll('*').remove();
+
+  // Filter flows
+  let flows = DATA.src.map((s, i) => ({s, t: DATA.tgt[i] - nSrc, v: DATA.val[i]}));
+  if (filterSrc !== 'all') flows = flows.filter(f => f.s === filterSrc);
+  flows = flows.filter(f => f.v >= threshVal);
+
+  // Active sources and targets
+  const activeSrc = [...new Set(flows.map(f => f.s))].sort((a,b)=>a-b);
+  const activeTgt = [...new Set(flows.map(f => f.t))];
+  // Sort targets by zone then index
+  activeTgt.sort((a,b) => tgtZones[a] - tgtZones[b] || a - b);
+
+  // Stats
+  const totalFlow = flows.reduce((a,f)=>a+f.v,0);
+  document.getElementById('stat-total').textContent = totalFlow.toLocaleString();
+  document.getElementById('stat-tgt').textContent = activeTgt.length;
+  document.getElementById('stat-links').textContent = flows.length;
+
+  // Layout
+  const W = Math.max(900, document.getElementById('chart-wrap').clientWidth - 64);
+  const rowH = Math.max(16, Math.min(40, 1600 / Math.max(activeTgt.length, 10)));
+  const H = Math.max(500, activeTgt.length * (rowH + 4) + 60);
+  const margin = {top: 20, right: 240, bottom: 20, left: 70};
+  const iW = W - margin.left - margin.right;
+  const iH = H - margin.top - margin.bottom;
+  const nodeW = 12;
+
+  svg.attr('width', W).attr('height', H);
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+
+  // Source totals (filtered)
+  const srcTotals = {};
+  const tgtTotals = {};
+  activeSrc.forEach(s => srcTotals[s] = 0);
+  activeTgt.forEach(t => tgtTotals[t] = 0);
+  flows.forEach(f => { srcTotals[f.s] = (srcTotals[f.s]||0) + f.v; tgtTotals[f.t] = (tgtTotals[f.t]||0) + f.v; });
+
+  // Source positions
+  const srcGap = 5;
+  const srcH = iH - (activeSrc.length - 1) * srcGap;
+  const srcNodeH = {}, srcY = {};
+  let cy = 0;
+  activeSrc.forEach(s => { srcNodeH[s] = (srcTotals[s]/totalFlow)*srcH; srcY[s] = cy; cy += srcNodeH[s] + srcGap; });
+
+  // Target positions
+  const tgtGap = 3;
+  const tgtH = iH - (activeTgt.length - 1) * tgtGap;
+  const tgtNodeH = {}, tgtY = {};
+  cy = 0;
+  activeTgt.forEach(t => { tgtNodeH[t] = (tgtTotals[t]/totalFlow)*tgtH; tgtY[t] = cy; cy += tgtNodeH[t] + tgtGap; });
+
+  // Draw flows with offsets
+  const srcOff = {}, tgtOff = {};
+  activeSrc.forEach(s => srcOff[s] = 0);
+  activeTgt.forEach(t => tgtOff[t] = 0);
+
+  // Sort flows by target zone for nicer visuals
+  flows.sort((a,b) => tgtZones[a.t] - tgtZones[b.t] || a.t - b.t);
+
+  flows.forEach(f => {
+    const h = (f.v/totalFlow)*iH;
+    const sy = srcY[f.s] + srcOff[f.s];
+    const ty = tgtY[f.t] + tgtOff[f.t];
+    srcOff[f.s] += h; tgtOff[f.t] += h;
+    const cx = iW/2;
+    const color = srcColors[f.s % srcColors.length];
+    const path = g.append('path')
+      .attr('d', `M${nodeW},${sy} C${cx},${sy} ${cx},${ty} ${iW},${ty} L${iW},${ty+h} C${cx},${ty+h} ${cx},${sy+h} ${nodeW},${sy+h} Z`)
+      .attr('fill', color).attr('opacity', 0.3).attr('stroke','none').style('cursor','pointer');
+
+    path.on('mouseover', function(event) {
+      d3.select(this).attr('opacity', 0.6);
+      tooltip.style.opacity = 1;
+      tooltip.innerHTML = `<b>เขต ${labels[f.s]}</b><br>→ ${labels[f.t+nSrc]}<br>Zone ${tgtZones[f.t]}<br>จำนวน: <b>${f.v.toLocaleString()}</b>`;
+    }).on('mousemove', function(event) {
+      tooltip.style.left = (event.clientX+14)+'px'; tooltip.style.top = (event.clientY-30)+'px';
+    }).on('mouseout', function() {
+      d3.select(this).attr('opacity',0.3); tooltip.style.opacity=0;
+    });
+  });
+
+  // Source nodes
+  activeSrc.forEach(s => {
+    const color = srcColors[s % srcColors.length];
+    g.append('rect').attr('x',0).attr('y',srcY[s]).attr('width',nodeW).attr('height',srcNodeH[s]).attr('fill',color).attr('rx',2);
+    g.append('text').attr('x',-6).attr('y',srcY[s]+srcNodeH[s]/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('font-size','12px').attr('font-weight','500').attr('fill','#333').text(`เขต ${s+1}`);
+    if (srcNodeH[s] > 12) g.append('text').attr('x',nodeW+4).attr('y',srcY[s]+srcNodeH[s]/2).attr('dominant-baseline','middle').attr('font-size','10px').attr('fill','#999').text(srcTotals[s].toLocaleString());
+  });
+
+  // Target nodes + zone labels
+  let lastZone = null;
+  activeTgt.forEach(t => {
+    const zone = tgtZones[t];
+    const color = zoneColors[zone]||'#888';
+    if (zone !== lastZone) {
+      g.append('text').attr('x',iW+nodeW+6).attr('y',tgtY[t]-2).attr('font-size','10px').attr('font-weight','600').attr('fill',color).text(`Zone ${zone}`);
+      lastZone = zone;
+    }
+    g.append('rect').attr('x',iW).attr('y',tgtY[t]).attr('width',nodeW).attr('height',tgtNodeH[t]).attr('fill',color).attr('rx',2);
+    const name = labels[t+nSrc];
+    const short = name.length > 26 ? name.substring(0,24)+'…' : name;
+    g.append('text').attr('x',iW+nodeW+6).attr('y',tgtY[t]+tgtNodeH[t]/2).attr('dominant-baseline','middle').attr('font-size','11px').attr('fill','#444').text(short);
+  });
+
+  // Legend
+  const leg = document.getElementById('legend');
+  leg.innerHTML = '<span style="font-size:12px;font-weight:600;color:#555;margin-right:4px;">Source (เขต):</span>';
+  activeSrc.forEach(s => {
+    leg.innerHTML += `<span class="legend-item"><span class="legend-swatch" style="background:${srcColors[s%srcColors.length]}"></span>เขต ${s+1} (${srcTotals[s].toLocaleString()})</span>`;
+  });
+}
+
+draw();
+</script>
+</body>
+</html>
