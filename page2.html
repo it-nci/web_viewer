@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระยะเวลารอคอยตั้งแต่ RT Simulation – 1st day of RT</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --surface2: #f7fafc;
+    --border: #e2e8f0;
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --teal: #2b6cb0;
+    --teal-light: #bee3f8;
+    --orange: #c05621;
+    --orange-light: #feebc8;
+    --green: #276749;
+    --green-light: #c6f6d5;
+    --purple: #553c9a;
+    --shadow: 0 4px 24px rgba(0,0,0,0.07);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding: 0 0 40px 0;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a365d 0%, #2b6cb0 60%, #2c7a7b 100%);
+    padding: 36px 48px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 260px; height: 260px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 30%;
+    width: 320px; height: 320px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+
+  .header-tag {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #bee3f8;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 14px;
+    border-radius: 30px;
+    margin-bottom: 14px;
+  }
+
+  header h1 {
+    font-size: clamp(20px, 3vw, 30px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.35;
+    max-width: 800px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header p {
+    margin-top: 10px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 300;
+    position: relative;
+    z-index: 1;
+  }
+
+  .main-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 36px 28px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 22px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  .icon-blue { background: #ebf8ff; }
+  .icon-green { background: #f0fff4; }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .card-subtitle {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    font-weight: 400;
+  }
+
+  .chart-area {
+    padding: 24px 28px 20px;
+    position: relative;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    height: 360px;
+  }
+
+  .legend-row {
+    display: flex;
+    gap: 24px;
+    padding: 0 28px 20px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Summary stats strip */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-cell {
+    padding: 14px 20px;
+    border-right: 1px solid var(--border);
+    text-align: center;
+  }
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .stat-val {
+    font-size: 22px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+
+  .val-blue { color: #2b6cb0; }
+  .val-orange { color: #c05621; }
+  .val-green { color: #276749; }
+  .val-purple { color: #553c9a; }
+
+  /* Source note */
+  .source-note {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 24px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .source-note strong {
+    color: var(--text-primary);
+    font-weight: 700;
+  }
+
+  .source-note .tag {
+    display: inline-block;
+    background: #ebf8ff;
+    color: #2b6cb0;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 24px 20px; }
+    .main-content { padding: 20px 12px 0; }
+    .card-header { padding: 16px 16px 12px; }
+    .chart-area { padding: 16px 12px 12px; }
+    .legend-row { padding: 0 12px 14px; }
+    .chart-wrapper { height: 280px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">การวิเคราะห์ข้อมูลรังสีรักษา</div>
+  <h1>ระยะเวลารอคอยตั้งแต่ RT Simulation – 1st day of RT</h1>
+  <p>แยกตามเขตสุขภาพ 1–13 &nbsp;|&nbsp; ข้อมูล E-claim ประจำปี 2568</p>
+</header>
+
+<div class="main-content">
+
+  <!-- Chart 1 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-blue">📊</div>
+      <div>
+        <div class="card-title">ระยะเวลารอคอย (วัน) จำแนกตามเขตสุขภาพ</div>
+        <div class="card-subtitle">Median และ Mean ของช่วงเวลาระหว่าง RT Simulation ถึงวันแรกของ RT</div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-cell">
+        <div class="stat-label">Median ต่ำสุด</div>
+        <div class="stat-val val-blue">7 วัน</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Median สูงสุด</div>
+        <div class="stat-val val-orange">14 วัน</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Mean ต่ำสุด</div>
+        <div class="stat-val val-blue">10.0 วัน</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Mean สูงสุด</div>
+        <div class="stat-val val-orange">17.1 วัน</div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-wrapper">
+        <canvas id="chart1"></canvas>
+      </div>
+    </div>
+
+    <div class="legend-row">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#2b6cb0;"></div>
+        <span>Median (วัน)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#c05621;"></div>
+        <span>Mean (วัน)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart 2 -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon icon-green">📈</div>
+      <div>
+        <div class="card-title">สัดส่วนผู้ป่วยที่ได้รับ RT ภายในกำหนด (%)</div>
+        <div class="card-subtitle">Within 4 สัปดาห์ และ Within 6 สัปดาห์ จำแนกตามเขตสุขภาพ</div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-cell">
+        <div class="stat-label">4 wk ต่ำสุด</div>
+        <div class="stat-val val-orange">65.3%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">4 wk สูงสุด</div>
+        <div class="stat-val val-green">96.8%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">6 wk ต่ำสุด</div>
+        <div class="stat-val val-orange">74.9%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">6 wk สูงสุด</div>
+        <div class="stat-val val-green">97.2%</div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-wrapper">
+        <canvas id="chart2"></canvas>
+      </div>
+    </div>
+
+    <div class="legend-row">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#276749;"></div>
+        <span>Within 4 สัปดาห์ (%)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:#553c9a;"></div>
+        <span>Within 6 สัปดาห์ (%)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Source note -->
+  <div class="source-note">
+    <span class="tag">ที่มา</span>
+    <strong>ข้อมูล E-claim</strong> ตั้งแต่วันที่ 1 มกราคม – 31 มกราคม 2568 &nbsp;(ผู้ป่วย 12,979 คน)<br>
+    <span style="margin-left:6px; color:#718096;">
+      โดย <strong>Day 0 = RT Planning</strong> วิเคราะห์จาก code RT + imaging วันเดียวกัน
+      หรือ code RT ครั้งแรกห่างกับวันที่สอง 5–60 วัน
+    </span>
+  </div>
+
+</div>
+
+<script>
+const zones = ['เขต 1','เขต 2','เขต 3','เขต 4','เขต 5','เขต 6','เขต 7','เขต 8','เขต 9','เขต 10','เขต 11','เขต 12','เขต 13'];
+
+const median = [14, 7, 9, 13, 11, 9, 8, 9, 7, 7, 11, 8, 8];
+const mean   = [15.46, 10.00, 10.34, 12.98, 11.16, 11.09, 9.99, 17.09, 12.32, 10.34, 11.98, 10.34, 10.53];
+const w4wk   = [87.81, 91.19, 88.19, 93.60, 95.42, 91.13, 92.11, 65.30, 81.77, 96.81, 89.33, 91.38, 91.43];
+const w6wk   = [92.06, 91.43, 89.16, 97.15, 95.90, 93.29, 93.22, 74.86, 87.39, 97.19, 90.05, 92.04, 93.04];
+
+const BLUE   = '#2b6cb0';
+const ORANGE = '#c05621';
+const GREEN  = '#276749';
+const PURPLE = '#553c9a';
+const BLUE_A  = 'rgba(43,108,176,0.85)';
+const ORANGE_A= 'rgba(192,86,33,0.85)';
+const GREEN_A = 'rgba(39,103,73,0.85)';
+const PURPLE_A= 'rgba(85,60,154,0.85)';
+
+const baseOpts = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1a202c',
+      titleFont: { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 13, weight: '600' },
+      bodyFont:  { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 12 },
+      padding: 12,
+      cornerRadius: 8,
+    }
+  },
+  scales: {
+    x: {
+      grid: { display: false },
+      ticks: {
+        font: { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 12 },
+        color: '#4a5568'
+      },
+      border: { color: '#e2e8f0' }
+    },
+    y: {
+      grid: { color: '#f0f4f8', lineWidth: 1 },
+      ticks: {
+        font: { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 12 },
+        color: '#718096'
+      },
+      border: { dash: [4,4], color: 'transparent' }
+    }
+  },
+  animation: {
+    duration: 900,
+    easing: 'easeOutQuart'
+  },
+  barPercentage: 0.72,
+  categoryPercentage: 0.82,
+};
+
+// Chart 1
+new Chart(document.getElementById('chart1'), {
+  type: 'bar',
+  data: {
+    labels: zones,
+    datasets: [
+      {
+        label: 'Median (วัน)',
+        data: median,
+        backgroundColor: BLUE_A,
+        borderColor: BLUE,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      },
+      {
+        label: 'Mean (วัน)',
+        data: mean,
+        backgroundColor: ORANGE_A,
+        borderColor: ORANGE,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    ...baseOpts,
+    plugins: {
+      ...baseOpts.plugins,
+      tooltip: {
+        ...baseOpts.plugins.tooltip,
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toFixed(1)} วัน`
+        }
+      }
+    },
+    scales: {
+      ...baseOpts.scales,
+      y: {
+        ...baseOpts.scales.y,
+        title: {
+          display: true,
+          text: 'จำนวนวัน',
+          font: { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 13, weight: '600' },
+          color: '#4a5568',
+          padding: { bottom: 8 }
+        },
+        min: 0,
+        max: 22,
+      }
+    }
+  }
+});
+
+// Chart 2
+new Chart(document.getElementById('chart2'), {
+  type: 'bar',
+  data: {
+    labels: zones,
+    datasets: [
+      {
+        label: 'Within 4 สัปดาห์ (%)',
+        data: w4wk,
+        backgroundColor: GREEN_A,
+        borderColor: GREEN,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      },
+      {
+        label: 'Within 6 สัปดาห์ (%)',
+        data: w6wk,
+        backgroundColor: PURPLE_A,
+        borderColor: PURPLE,
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }
+    ]
+  },
+  options: {
+    ...baseOpts,
+    plugins: {
+      ...baseOpts.plugins,
+      tooltip: {
+        ...baseOpts.plugins.tooltip,
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${Number(ctx.raw).toFixed(1)}%`
+        }
+      }
+    },
+    scales: {
+      ...baseOpts.scales,
+      y: {
+        ...baseOpts.scales.y,
+        title: {
+          display: true,
+          text: 'ร้อยละ (%)',
+          font: { family: "'IBM Plex Sans Thai', 'Sarabun', sans-serif", size: 13, weight: '600' },
+          color: '#4a5568',
+          padding: { bottom: 8 }
+        },
+        min: 0,
+        max: 100,
+        ticks: {
+          ...baseOpts.scales.y.ticks,
+          callback: v => v + '%'
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
