@@ -10,72 +10,60 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: #0d1b2a;
-  font-family: 'IBM Plex Sans Thai', sans-serif;
-  color: #e8f4fd;
+  background: #f5f6fa;
+  font-family: 'IBM Plex Sans Thai', sans-serif; color: #1a1a2a;
   display: flex; flex-direction: column; align-items: center;
   padding: 28px 16px 40px; min-height: 100vh;
 }
 header { text-align: center; margin-bottom: 16px; }
-header .eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #00d4ff; margin-bottom: 6px; }
-header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+header .eyebrow { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #2196f3; margin-bottom: 6px; }
+header h1 { font-size: 22px; font-weight: 700; color: #1a1a2a; }
 
-.controls {
-  display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; align-items: center;
-}
+.controls { display: flex; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; align-items: flex-end; }
 .ctrl-group { display: flex; flex-direction: column; gap: 4px; align-items: center; }
-.ctrl-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #4a7a9b; }
+.ctrl-label { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: #8090b0; }
 .tabs { display: flex; gap: 6px; }
 .tab {
   padding: 6px 16px; border-radius: 6px; cursor: pointer;
   font-size: 13px; font-weight: 600; font-family: 'IBM Plex Sans Thai', sans-serif;
-  border: 1.5px solid #1e3a5f; background: #112236; color: #7aadcc;
-  transition: all 0.18s;
+  border: 1.5px solid #c8cfe0; background: #ffffff; color: #4a5a7a; transition: all 0.18s;
 }
-.tab:hover { border-color: #2196f3; color: #e8f4fd; }
-.tab.active { background: #2196f3; border-color: #2196f3; color: #fff; }
+.tab:hover { border-color: #2196f3; color: #1a1a2a; }
+.tab.active { background: #e94560; border-color: #2196f3; color: #1a1a2a; }
 
 select {
-  padding: 6px 12px; border-radius: 6px; background: #112236;
-  border: 1.5px solid #1e3a5f; color: #e8f4fd;
-  font-size: 13px; font-family: 'IBM Plex Sans Thai', sans-serif;
+  padding: 6px 12px; border-radius: 6px;
+  background: #4f97e9; border: 1.5px solid #1e3a5f;
+  color: #26262b; font-size: 13px; font-family: 'IBM Plex Sans Thai', sans-serif;
   cursor: pointer; outline: none;
 }
-select:hover { border-color: #2196f3; }
+select:hover { border-color: #e94560; }
 
 .chart-wrap {
-  background: #112236; border: 1px solid #1e3a5f; border-radius: 14px;
-  padding: 20px 0 16px; width: 100%; max-width: 960px;
+  background: #ffffff; border: 1px solid #dde1ea; border-radius: 14px;
+  padding: 20px 0 16px; width: 100%; max-width: 1020px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
-/* ห่อ svg ด้วย div ที่ไม่ clip */
 .svg-outer { width: 100%; padding: 0 20px; }
 svg { display: block; width: 100%; }
-
-.node-rect { cursor: default; }
-.link { fill: none; stroke-opacity: 0.38; transition: stroke-opacity 0.2s; }
-.link:hover { stroke-opacity: 0.72; }
+.link { fill: none; stroke-opacity: 0.35; transition: stroke-opacity 0.2s; }
+.link:hover { stroke-opacity: 0.7; }
 
 .waiting-box {
-  margin: 28px 20px 0;
-  background: #0d1b2a; border: 1px solid #1e3a5f; border-radius: 10px;
-  padding: 12px 20px;
-  display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center;
+  margin: 28px 20px 0; background: #f5f6fa; border: 1px solid #1e3a5f; border-radius: 10px;
+  padding: 12px 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; justify-content: center;
 }
 .w-item { text-align: center; }
-.w-lbl { font-size: 10px; color: #4a7a9b; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
-.w-val { font-size: 22px; font-weight: 700; color: #ff7043; }
-.w-unit { font-size: 12px; font-weight: 400; color: #7aadcc; margin-left: 3px; }
-.w-div { width: 1px; height: 40px; background: #1e3a5f; }
+.w-lbl { font-size: 10px; color: #8090b0; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 2px; }
+.w-val { font-size: 22px; font-weight: 700; color: #e53935; }
+.w-unit { font-size: 12px; font-weight: 400; color: #6070a0; margin-left: 3px; }
+.w-div { width: 1px; height: 40px; background: #dde1ea; }
 
-.source-note {
-  margin-top: 14px; width: 100%; max-width: 960px;
-  font-size: 11px; color: #3a5f7a; line-height: 1.8;
-}
-.source-note strong { color: #5a8aaa; }
+.source-note { margin-top: 14px; width: 100%; max-width: 1020px; font-size: 11px; color: #8090b0; line-height: 1.8; }
+.source-note strong { color: #7080a0; }
 </style>
 </head>
 <body>
-
 <header>
   <div class="eyebrow">National Cancer Institute of Thailand</div>
   <h1>การคัดกรองมะเร็งปากมดลูก</h1>
@@ -84,44 +72,34 @@ svg { display: block; width: 100%; }
 <div class="controls">
   <div class="ctrl-group">
     <div class="ctrl-label">ปีงบประมาณ</div>
-    <div class="tabs" id="year-tabs">
-      <div class="tab active" data-year="2023">2566</div>
-      <div class="tab" data-year="2024">2567</div>
-      <div class="tab" data-year="2025">2568</div>
+    <div class="tabs">
+      <div class="tab active" data-year="2566">2566</div>
+      <div class="tab" data-year="2567">2567</div>
+      <div class="tab" data-year="2568">2568</div>
     </div>
   </div>
   <div class="ctrl-group">
     <div class="ctrl-label">เขตสุขภาพ</div>
     <select id="zone-select">
       <option value="0">ภาพรวมประเทศ</option>
-      <option value="1">เขต 1</option>
-      <option value="2">เขต 2</option>
-      <option value="3">เขต 3</option>
-      <option value="4">เขต 4</option>
-      <option value="5">เขต 5</option>
-      <option value="6">เขต 6</option>
-      <option value="7">เขต 7</option>
-      <option value="8">เขต 8</option>
-      <option value="9">เขต 9</option>
-      <option value="10">เขต 10</option>
-      <option value="11">เขต 11</option>
-      <option value="12">เขต 12</option>
+      <option value="1">เขต 1</option><option value="2">เขต 2</option>
+      <option value="3">เขต 3</option><option value="4">เขต 4</option>
+      <option value="5">เขต 5</option><option value="6">เขต 6</option>
+      <option value="7">เขต 7</option><option value="8">เขต 8</option>
+      <option value="9">เขต 9</option><option value="10">เขต 10</option>
+      <option value="11">เขต 11</option><option value="12">เขต 12</option>
       <option value="13">เขต 13</option>
     </select>
   </div>
 </div>
 
 <div class="chart-wrap">
-  <div class="svg-outer">
-    <svg id="sankey-svg"></svg>
-  </div>
+  <div class="svg-outer"><svg id="sankey-svg"></svg></div>
   <div class="waiting-box">
-    <div class="w-item">
-      <div class="w-lbl">ระยะเวลารอผล Colposcopy</div>
-    </div>
+    <div class="w-item"><div class="w-lbl">ระยะเวลารอ Colposcopy (HPV 16/18)</div></div>
     <div class="w-div"></div>
     <div class="w-item">
-      <div class="w-lbl">จำนวนราย</div>
+      <div class="w-lbl">จำนวนราย (Colpo รวม)</div>
       <div class="w-val" id="w-count">—<span class="w-unit">ราย</span></div>
     </div>
     <div class="w-div"></div>
@@ -144,61 +122,81 @@ svg { display: block; width: 100%; }
 </div>
 
 <script>
-const RAW = {"0": {"2023": {"total": 792806, "neg": 729992, "hpv_pos": 62814, "colpo": 10573, "cancer": 452, "no_cancer": 10121, "mean": 96, "median": 76}, "2024": {"total": 1294035, "neg": 1173025, "hpv_pos": 121010, "colpo": 12089, "cancer": 491, "no_cancer": 11598, "mean": 100, "median": 83}, "2025": {"total": 1196277, "neg": 1075590, "hpv_pos": 120687, "colpo": 9684, "cancer": 405, "no_cancer": 9279, "mean": 98, "median": 82}}, "1": {"2023": {"total": 84929, "neg": 78944, "hpv_pos": 5985, "colpo": 908, "cancer": 39, "no_cancer": 869, "mean": 73, "median": 63}, "2024": {"total": 80679, "neg": 73727, "hpv_pos": 6952, "colpo": 664, "cancer": 23, "no_cancer": 641, "mean": 89, "median": 72}, "2025": {"total": 83401, "neg": 75337, "hpv_pos": 8064, "colpo": 893, "cancer": 24, "no_cancer": 869, "mean": 85, "median": 75}}, "2": {"2023": {"total": 29012, "neg": 25590, "hpv_pos": 3422, "colpo": 543, "cancer": 22, "no_cancer": 521, "mean": 77, "median": 54}, "2024": {"total": 47386, "neg": 44113, "hpv_pos": 3273, "colpo": 540, "cancer": 25, "no_cancer": 515, "mean": 98, "median": 83}, "2025": {"total": 64218, "neg": 59420, "hpv_pos": 4798, "colpo": 512, "cancer": 25, "no_cancer": 487, "mean": 130, "median": 117}}, "3": {"2023": {"total": 44418, "neg": 41249, "hpv_pos": 3169, "colpo": 651, "cancer": 39, "no_cancer": 612, "mean": 134, "median": 119}, "2024": {"total": 64421, "neg": 59833, "hpv_pos": 4588, "colpo": 691, "cancer": 35, "no_cancer": 656, "mean": 106, "median": 95}, "2025": {"total": 38256, "neg": 35234, "hpv_pos": 3022, "colpo": 287, "cancer": 13, "no_cancer": 274, "mean": 117, "median": 110}}, "4": {"2023": {"total": 54028, "neg": 49889, "hpv_pos": 4139, "colpo": 818, "cancer": 31, "no_cancer": 787, "mean": 91, "median": 76}, "2024": {"total": 100148, "neg": 88476, "hpv_pos": 11672, "colpo": 833, "cancer": 22, "no_cancer": 811, "mean": 83, "median": 63}, "2025": {"total": 108131, "neg": 94830, "hpv_pos": 13301, "colpo": 517, "cancer": 24, "no_cancer": 493, "mean": 93, "median": 84}}, "5": {"2023": {"total": 58934, "neg": 53849, "hpv_pos": 5085, "colpo": 975, "cancer": 50, "no_cancer": 925, "mean": 83, "median": 66}, "2024": {"total": 89047, "neg": 80670, "hpv_pos": 8377, "colpo": 1138, "cancer": 76, "no_cancer": 1062, "mean": 96, "median": 80}, "2025": {"total": 86309, "neg": 76810, "hpv_pos": 9499, "colpo": 863, "cancer": 68, "no_cancer": 795, "mean": 83, "median": 65}}, "6": {"2023": {"total": 85473, "neg": 77167, "hpv_pos": 8306, "colpo": 1230, "cancer": 52, "no_cancer": 1178, "mean": 66, "median": 49}, "2024": {"total": 130838, "neg": 115759, "hpv_pos": 15079, "colpo": 957, "cancer": 45, "no_cancer": 912, "mean": 91, "median": 69}, "2025": {"total": 151937, "neg": 131160, "hpv_pos": 20777, "colpo": 704, "cancer": 34, "no_cancer": 670, "mean": 94, "median": 78}}, "7": {"2023": {"total": 82053, "neg": 73614, "hpv_pos": 8439, "colpo": 769, "cancer": 14, "no_cancer": 755, "mean": 104, "median": 85}, "2024": {"total": 84404, "neg": 77084, "hpv_pos": 7320, "colpo": 520, "cancer": 9, "no_cancer": 511, "mean": 110, "median": 91}, "2025": {"total": 90763, "neg": 82906, "hpv_pos": 7857, "colpo": 698, "cancer": 10, "no_cancer": 688, "mean": 98, "median": 80}}, "8": {"2023": {"total": 99709, "neg": 93375, "hpv_pos": 6334, "colpo": 1142, "cancer": 75, "no_cancer": 1067, "mean": 114, "median": 99}, "2024": {"total": 109228, "neg": 100510, "hpv_pos": 8718, "colpo": 1251, "cancer": 57, "no_cancer": 1194, "mean": 108, "median": 97}, "2025": {"total": 90171, "neg": 82391, "hpv_pos": 7780, "colpo": 1344, "cancer": 54, "no_cancer": 1290, "mean": 97, "median": 82}}, "9": {"2023": {"total": 80776, "neg": 74829, "hpv_pos": 5947, "colpo": 1570, "cancer": 59, "no_cancer": 1511, "mean": 113, "median": 93}, "2024": {"total": 120005, "neg": 109825, "hpv_pos": 10180, "colpo": 1960, "cancer": 63, "no_cancer": 1897, "mean": 101, "median": 81}, "2025": {"total": 86012, "neg": 78096, "hpv_pos": 7916, "colpo": 1210, "cancer": 49, "no_cancer": 1161, "mean": 98, "median": 82}}, "10": {"2023": {"total": 58687, "neg": 54981, "hpv_pos": 3706, "colpo": 560, "cancer": 31, "no_cancer": 529, "mean": 99, "median": 74}, "2024": {"total": 110116, "neg": 101238, "hpv_pos": 8878, "colpo": 981, "cancer": 63, "no_cancer": 918, "mean": 101, "median": 85}, "2025": {"total": 85698, "neg": 79060, "hpv_pos": 6638, "colpo": 595, "cancer": 34, "no_cancer": 561, "mean": 87, "median": 72}}, "11": {"2023": {"total": 42696, "neg": 39316, "hpv_pos": 3380, "colpo": 734, "cancer": 19, "no_cancer": 715, "mean": 101, "median": 74}, "2024": {"total": 93250, "neg": 84674, "hpv_pos": 8576, "colpo": 1380, "cancer": 37, "no_cancer": 1343, "mean": 108, "median": 90}, "2025": {"total": 79553, "neg": 71270, "hpv_pos": 8283, "colpo": 1032, "cancer": 34, "no_cancer": 998, "mean": 101, "median": 88}}, "12": {"2023": {"total": 54868, "neg": 51886, "hpv_pos": 2982, "colpo": 587, "cancer": 18, "no_cancer": 569, "mean": 98, "median": 81}, "2024": {"total": 94165, "neg": 88112, "hpv_pos": 6053, "colpo": 756, "cancer": 27, "no_cancer": 729, "mean": 99, "median": 82}, "2025": {"total": 99230, "neg": 92062, "hpv_pos": 7168, "colpo": 673, "cancer": 22, "no_cancer": 651, "mean": 114, "median": 97}}, "13": {"2023": {"total": 17223, "neg": 15303, "hpv_pos": 1920, "colpo": 86, "cancer": 3, "no_cancer": 83, "mean": 119, "median": 106}, "2024": {"total": 170348, "neg": 149004, "hpv_pos": 21344, "colpo": 418, "cancer": 9, "no_cancer": 409, "mean": 116, "median": 100}, "2025": {"total": 132598, "neg": 117014, "hpv_pos": 15584, "colpo": 356, "cancer": 14, "no_cancer": 342, "mean": 96, "median": 79}}};
+const RAW = {"0": {"2566": {"total": 866296, "neg": 802383, "hr16": 19798, "hrnon": 44115, "hr16_colpo": 7910, "hrnon_colpo": 5708, "cancer": 890, "no_cancer": 12728, "mean": 83, "median": 62}, "2567": {"total": 1393641, "neg": 1267426, "hr16": 33122, "hrnon": 93093, "hr16_colpo": 11453, "hrnon_colpo": 7042, "cancer": 987, "no_cancer": 17508, "mean": 81, "median": 60}, "2568": {"total": 1278361, "neg": 1154179, "hr16": 31309, "hrnon": 92873, "hr16_colpo": 11995, "hrnon_colpo": 6139, "cancer": 810, "no_cancer": 17324, "mean": 78, "median": 59}}, "1": {"2566": {"total": 88323, "neg": 82175, "hr16": 1345, "hrnon": 4803, "hr16_colpo": 637, "hrnon_colpo": 507, "cancer": 73, "no_cancer": 1071, "mean": 64, "median": 52}, "2567": {"total": 83718, "neg": 76470, "hr16": 2149, "hrnon": 5099, "hr16_colpo": 597, "hrnon_colpo": 408, "cancer": 63, "no_cancer": 942, "mean": 71, "median": 51}, "2568": {"total": 82786, "neg": 74739, "hr16": 2023, "hrnon": 6024, "hr16_colpo": 868, "hrnon_colpo": 450, "cancer": 60, "no_cancer": 1258, "mean": 66, "median": 48}}, "2": {"2566": {"total": 39532, "neg": 36062, "hr16": 1877, "hrnon": 1593, "hr16_colpo": 373, "hrnon_colpo": 280, "cancer": 44, "no_cancer": 609, "mean": 68, "median": 48}, "2567": {"total": 51479, "neg": 48092, "hr16": 1020, "hrnon": 2367, "hr16_colpo": 443, "hrnon_colpo": 286, "cancer": 42, "no_cancer": 687, "mean": 87, "median": 64}, "2568": {"total": 64923, "neg": 60701, "hr16": 1119, "hrnon": 3103, "hr16_colpo": 643, "hrnon_colpo": 412, "cancer": 43, "no_cancer": 1012, "mean": 109, "median": 97}}, "3": {"2566": {"total": 48656, "neg": 45487, "hr16": 812, "hrnon": 2357, "hr16_colpo": 386, "hrnon_colpo": 287, "cancer": 64, "no_cancer": 609, "mean": 116, "median": 94}, "2567": {"total": 46767, "neg": 43345, "hr16": 896, "hrnon": 2526, "hr16_colpo": 451, "hrnon_colpo": 366, "cancer": 41, "no_cancer": 776, "mean": 78, "median": 61}, "2568": {"total": 34921, "neg": 32216, "hr16": 692, "hrnon": 2013, "hr16_colpo": 266, "hrnon_colpo": 253, "cancer": 26, "no_cancer": 493, "mean": 90, "median": 68}}, "4": {"2566": {"total": 50805, "neg": 46882, "hr16": 1101, "hrnon": 2822, "hr16_colpo": 458, "hrnon_colpo": 350, "cancer": 62, "no_cancer": 746, "mean": 77, "median": 56}, "2567": {"total": 95415, "neg": 84238, "hr16": 3084, "hrnon": 8093, "hr16_colpo": 851, "hrnon_colpo": 431, "cancer": 58, "no_cancer": 1224, "mean": 61, "median": 41}, "2568": {"total": 98060, "neg": 86225, "hr16": 2724, "hrnon": 9111, "hr16_colpo": 931, "hrnon_colpo": 420, "cancer": 68, "no_cancer": 1283, "mean": 65, "median": 45}}, "5": {"2566": {"total": 64026, "neg": 58931, "hr16": 1251, "hrnon": 3844, "hr16_colpo": 665, "hrnon_colpo": 510, "cancer": 99, "no_cancer": 1076, "mean": 68, "median": 56}, "2567": {"total": 67291, "neg": 60370, "hr16": 1850, "hrnon": 5071, "hr16_colpo": 628, "hrnon_colpo": 351, "cancer": 120, "no_cancer": 859, "mean": 76, "median": 59}, "2568": {"total": 77328, "neg": 68564, "hr16": 2012, "hrnon": 6752, "hr16_colpo": 974, "hrnon_colpo": 475, "cancer": 150, "no_cancer": 1299, "mean": 70, "median": 55}}, "6": {"2566": {"total": 94059, "neg": 85642, "hr16": 2632, "hrnon": 5785, "hr16_colpo": 975, "hrnon_colpo": 593, "cancer": 109, "no_cancer": 1459, "mean": 60, "median": 42}, "2567": {"total": 117210, "neg": 104104, "hr16": 3464, "hrnon": 9642, "hr16_colpo": 1123, "hrnon_colpo": 503, "cancer": 99, "no_cancer": 1527, "mean": 87, "median": 68}, "2568": {"total": 128990, "neg": 112767, "hr16": 4598, "hrnon": 11625, "hr16_colpo": 1551, "hrnon_colpo": 586, "cancer": 76, "no_cancer": 2061, "mean": 72, "median": 57}}, "7": {"2566": {"total": 88321, "neg": 79849, "hr16": 3950, "hrnon": 4522, "hr16_colpo": 737, "hrnon_colpo": 317, "cancer": 22, "no_cancer": 1032, "mean": 84, "median": 68}, "2567": {"total": 88067, "neg": 80529, "hr16": 2069, "hrnon": 5469, "hr16_colpo": 631, "hrnon_colpo": 255, "cancer": 21, "no_cancer": 865, "mean": 77, "median": 55}, "2568": {"total": 81936, "neg": 74832, "hr16": 1626, "hrnon": 5478, "hr16_colpo": 802, "hrnon_colpo": 274, "cancer": 13, "no_cancer": 1063, "mean": 73, "median": 53}}, "8": {"2566": {"total": 104746, "neg": 98411, "hr16": 1647, "hrnon": 4688, "hr16_colpo": 955, "hrnon_colpo": 464, "cancer": 143, "no_cancer": 1276, "mean": 105, "median": 90}, "2567": {"total": 116287, "neg": 107567, "hr16": 1980, "hrnon": 6740, "hr16_colpo": 944, "hrnon_colpo": 517, "cancer": 101, "no_cancer": 1360, "mean": 99, "median": 82}, "2568": {"total": 75211, "neg": 68640, "hr16": 1642, "hrnon": 4929, "hr16_colpo": 883, "hrnon_colpo": 402, "cancer": 59, "no_cancer": 1226, "mean": 85, "median": 68}}, "9": {"2566": {"total": 90067, "neg": 84080, "hr16": 1528, "hrnon": 4459, "hr16_colpo": 916, "hrnon_colpo": 951, "cancer": 105, "no_cancer": 1762, "mean": 107, "median": 88}, "2567": {"total": 108490, "neg": 99605, "hr16": 2128, "hrnon": 6757, "hr16_colpo": 1138, "hrnon_colpo": 1015, "cancer": 88, "no_cancer": 2065, "mean": 81, "median": 56}, "2568": {"total": 73237, "neg": 66990, "hr16": 1497, "hrnon": 4750, "hr16_colpo": 808, "hrnon_colpo": 652, "cancer": 52, "no_cancer": 1408, "mean": 75, "median": 58}}, "10": {"2566": {"total": 64658, "neg": 60926, "hr16": 1028, "hrnon": 2704, "hr16_colpo": 457, "hrnon_colpo": 380, "cancer": 72, "no_cancer": 765, "mean": 83, "median": 57}, "2567": {"total": 118112, "neg": 108915, "hr16": 1989, "hrnon": 7208, "hr16_colpo": 931, "hrnon_colpo": 491, "cancer": 105, "no_cancer": 1317, "mean": 77, "median": 54}, "2568": {"total": 86814, "neg": 80586, "hr16": 1389, "hrnon": 4839, "hr16_colpo": 686, "hrnon_colpo": 325, "cancer": 65, "no_cancer": 946, "mean": 62, "median": 46}}, "11": {"2566": {"total": 47165, "neg": 43768, "hr16": 865, "hrnon": 2532, "hr16_colpo": 508, "hrnon_colpo": 630, "cancer": 34, "no_cancer": 1104, "mean": 80, "median": 56}, "2567": {"total": 98855, "neg": 90295, "hr16": 2080, "hrnon": 6480, "hr16_colpo": 1004, "hrnon_colpo": 882, "cancer": 65, "no_cancer": 1821, "mean": 88, "median": 64}, "2568": {"total": 85284, "neg": 76712, "hr16": 1906, "hrnon": 6666, "hr16_colpo": 946, "hrnon_colpo": 827, "cancer": 60, "no_cancer": 1713, "mean": 98, "median": 80}}, "12": {"2566": {"total": 59290, "neg": 56309, "hr16": 1001, "hrnon": 1980, "hr16_colpo": 489, "hrnon_colpo": 211, "cancer": 44, "no_cancer": 656, "mean": 89, "median": 76}, "2567": {"total": 98289, "neg": 92307, "hr16": 1824, "hrnon": 4158, "hr16_colpo": 822, "hrnon_colpo": 296, "cancer": 44, "no_cancer": 1074, "mean": 80, "median": 60}, "2568": {"total": 101472, "neg": 94361, "hr16": 1877, "hrnon": 5234, "hr16_colpo": 1059, "hrnon_colpo": 331, "cancer": 48, "no_cancer": 1342, "mean": 84, "median": 64}}, "13": {"2566": {"total": 26648, "neg": 23861, "hr16": 761, "hrnon": 2026, "hr16_colpo": 354, "hrnon_colpo": 228, "cancer": 19, "no_cancer": 563, "mean": 79, "median": 56}, "2567": {"total": 303661, "neg": 271589, "hr16": 8589, "hrnon": 23483, "hr16_colpo": 1890, "hrnon_colpo": 1241, "cancer": 140, "no_cancer": 2991, "mean": 83, "median": 62}, "2568": {"total": 287399, "neg": 256846, "hr16": 8204, "hrnon": 22349, "hr16_colpo": 1578, "hrnon_colpo": 732, "cancer": 90, "no_cancer": 2220, "mean": 77, "median": 59}}};
 
-let curYear = 2023, curZone = 0;
+let curYear = 2566, curZone = 0;
+const FF = "IBM Plex Sans Thai, sans-serif";
+const LINE_H = 15;
+
+// theme colors
+const C = {
+  screen:  "#2196f3",
+  neg:     "#26a69a",
+  hr16:    "#e53935",
+  hrnon:   "#ff7043",
+  colpo16: "#c62828",
+  colponon:"#ef6c00",
+  cancer:  "#b71c1c",
+  nocancer:"#2e7d32",
+};
 
 function fmt(n)  { return Math.round(n).toLocaleString('th-TH'); }
 function pct(n, base) { return base > 0 ? ((n/base)*100).toFixed(1)+"%" : "–"; }
 
 function draw() {
   const d = RAW[String(curZone)][String(curYear)];
+  const total_colpo = d.hr16_colpo + d.hrnon_colpo;
+  const cancer_16   = Math.round(d.cancer * d.hr16_colpo / total_colpo);
+  const cancer_non  = d.cancer - cancer_16;
+  const nocancer_16 = d.hr16_colpo  - cancer_16;
+  const nocancer_non= d.hrnon_colpo - cancer_non;
 
-  // SVG dimensions – fixed internal size, let viewBox handle scaling
-  const IW = 760, IH = 440;
-  const ML = 210, MR = 210, MT = 30, MB = 60;
+  const IW = 920, IH = 620;
+  const ML = 235, MR = 235, MT = 45, MB = 70;
 
   const svgEl = d3.select("#sankey-svg");
   svgEl.selectAll("*").remove();
-  // viewBox เท่ากับ content เพื่อไม่ให้ clip
   svgEl.attr("viewBox", `0 0 ${IW} ${IH}`);
-
   const defs = svgEl.append("defs");
 
-  const nodeColors = ["#2196f3","#26a69a","#ef5350","#ff7043","#c62828","#2e7d32"];
-  const nodeNames  = ["ตรวจคัดกรอง","HPV Negative\n/ No Result","HPV Positive","Colposcopy","พบมะเร็ง","ไม่พบมะเร็ง"];
-  const nodeSub1   = [
-    fmt(d.total)+" ราย",
-    fmt(d.neg)+" ราย",
-    fmt(d.hpv_pos)+" ราย",
-    fmt(d.colpo)+" ราย",
-    fmt(d.cancer)+" ราย",
-    fmt(d.no_cancer)+" ราย"
-  ];
-  const nodeSub2   = [
-    "",
-    pct(d.neg, d.total)+" ของผู้ตรวจ",
-    pct(d.hpv_pos, d.total)+" ของผู้ตรวจ",
-    pct(d.colpo, d.hpv_pos)+" ของ HPV Pos",
-    pct(d.cancer, d.colpo)+" ของผู้ทำ Colpo",
-    pct(d.no_cancer, d.colpo)+" ของผู้ทำ Colpo"
+  const NODES = [
+    { name:"ตรวจคัดกรอง",             color:C.screen,   sub1:fmt(d.total)+" ราย",          sub2:"" },
+    { name:"Negative / No result",    color:C.neg,      sub1:fmt(d.neg)+" ราย",            sub2:pct(d.neg,d.total)+" ของผู้ตรวจ" },
+    { name:"HPV 16/18",               color:C.hr16,     sub1:fmt(d.hr16)+" ราย",           sub2:pct(d.hr16,d.total)+" ของผู้ตรวจ" },
+    { name:"HPV non 16/18",           color:C.hrnon,    sub1:fmt(d.hrnon)+" ราย",          sub2:pct(d.hrnon,d.total)+" ของผู้ตรวจ" },
+    { name:"Colposcopy\n(HPV 16/18)", color:C.colpo16,  sub1:fmt(d.hr16_colpo)+" ราย",     sub2: pct(d.hr16_colpo,d.hr16)+" ของ HPV 16/18" },
+    { name:"Colposcopy\n(non 16/18)", color:C.colponon, sub1:fmt(d.hrnon_colpo)+" ราย",    sub2:"" },
+    { name:"พบมะเร็ง",                color:C.cancer,   sub1:fmt(d.cancer)+" ราย",         sub2:pct(d.cancer,total_colpo)+" ของผู้ทำ Colpo" },
+    { name:"ไม่พบมะเร็ง",             color:C.nocancer, sub1:fmt(total_colpo-d.cancer)+" ราย", sub2:pct(total_colpo-d.cancer,total_colpo)+" ของผู้ทำ Colpo" },
   ];
 
+  const sp = (n,p) => Math.max(1, Math.pow(n, p));
+  const sv = n    => Math.max(1, Math.sqrt(n));
+
   const graph = {
-    nodes: nodeColors.map((c,i) => ({ color: c, index: i })),
+    nodes: NODES.map((n,i) => ({...n, index:i})),
     links: [
-      { source: 0, target: 1, value: d.neg },
-      { source: 0, target: 2, value: d.hpv_pos },
-      { source: 2, target: 3, value: d.colpo },
-      { source: 3, target: 4, value: d.cancer },
-      { source: 3, target: 5, value: d.no_cancer },
+      { source:0, target:1, value: sp(d.neg,   0.38) },
+      { source:0, target:2, value: sp(d.hr16,  0.38) },
+      { source:0, target:3, value: sp(d.hrnon, 0.38) },
+      { source:2, target:4, value: sv(d.hr16_colpo) },
+      { source:3, target:5, value: sv(d.hrnon_colpo) },
+      { source:4, target:6, value: sv(cancer_16) },
+      { source:4, target:7, value: sv(nocancer_16) },
+      { source:5, target:6, value: sv(cancer_non) },
+      { source:5, target:7, value: sv(nocancer_non) },
     ]
   };
+
+  // rank 0→neg(top), 2→hr16, 3→hrnon(pushed down)
+  const NODE_RANK = { 0:0, 1:0, 2:12, 3:15, 4:0, 5:1, 6:0, 7:1 };
 
   const sankey = d3.sankey()
     .nodeId(n => n.index)
     .nodeWidth(14)
-    .nodePadding(28)
+    .nodePadding(52)
+    .nodeSort((a,b) => (NODE_RANK[a.index]??0) - (NODE_RANK[b.index]??0))
+    .iterations(64)
     .extent([[ML, MT], [IW - MR, IH - MB]]);
 
   const { nodes, links } = sankey({
@@ -212,151 +210,84 @@ function draw() {
     const gr = defs.append("linearGradient").attr("id",id)
       .attr("gradientUnits","userSpaceOnUse")
       .attr("x1",l.source.x1).attr("x2",l.target.x0);
-    gr.append("stop").attr("offset","0%").attr("stop-color",l.source.color).attr("stop-opacity",.55);
-    gr.append("stop").attr("offset","100%").attr("stop-color",l.target.color).attr("stop-opacity",.55);
+    gr.append("stop").attr("offset","0%").attr("stop-color",l.source.color).attr("stop-opacity",.45);
+    gr.append("stop").attr("offset","100%").attr("stop-color",l.target.color).attr("stop-opacity",.45);
     l.gid = id;
   });
 
-  // draw links
   svgEl.append("g").selectAll("path").data(links).join("path")
     .attr("class","link")
     .attr("d", d3.sankeyLinkHorizontal())
     .attr("stroke", l => `url(#${l.gid})`)
     .attr("stroke-width", l => Math.max(1, l.width))
-    .append("title").text(l => `${nodeNames[l.source.index]} → ${nodeNames[l.target.index]}\n${fmt(l.value)} ราย`);
+    .append("title").text(l =>
+      `${NODES[l.source.index].name.replace("\n"," ")} → ${NODES[l.target.index].name.replace("\n"," ")}\n${fmt(l.value)} ราย`);
 
-  // draw node rects
   const ng = svgEl.append("g").selectAll("g").data(nodes).join("g");
   ng.append("rect")
-    .attr("x", n => n.x0).attr("y", n => n.y0)
-    .attr("width", n => n.x1-n.x0)
-    .attr("height", n => Math.max(2, n.y1-n.y0))
-    .attr("fill", n => n.color).attr("rx", 3);
+    .attr("x", n=>n.x0).attr("y", n=>n.y0)
+    .attr("width", n=>n.x1-n.x0).attr("height", n=>Math.max(2,n.y1-n.y0))
+    .attr("fill", n=>n.color).attr("rx",3)
+    .append("title").text(n=>`${NODES[n.index].name.replace("\n"," ")}\n${fmt(n.value)} ราย`);
 
-  const FF = "IBM Plex Sans Thai, sans-serif";
-
-  // คำนวณ label Y positions สำหรับ right-side nodes แบบ de-overlap
-  // right nodes = index 4 (พบมะเร็ง), 5 (ไม่พบมะเร็ง)
-  const LINE_H = 13;
-  const BLOCK = 3 * LINE_H; // name+sub1+sub2
-  // หา right nodes
+  // de-overlap right labels
+  const BLOCK = 3 * LINE_H;
   const rightNodes = nodes.filter(n => n.x1 >= IW - MR - 1);
-  // sort by midY
   rightNodes.sort((a,b) => (a.y0+a.y1)/2 - (b.y0+b.y1)/2);
-  // assign startY แบบ de-overlap
   const labelStartY = {};
   let prevBottom = -Infinity;
   rightNodes.forEach(n => {
-    const midY = (n.y0 + n.y1) / 2;
-    const nodeH = n.y1 - n.y0;
-    let startY;
-    if (nodeH >= BLOCK) {
-      startY = n.y0 + (nodeH - BLOCK) / 2 + LINE_H / 2;
-    } else {
-      startY = midY - (BLOCK / 2) + LINE_H / 2;
-    }
-    // push down if overlapping previous
-    if (startY < prevBottom + 4) startY = prevBottom + 4;
-    labelStartY[n.index] = startY;
-    prevBottom = startY + BLOCK;
+    const nodeH = n.y1-n.y0, midY = (n.y0+n.y1)/2;
+    let sy = nodeH >= BLOCK ? n.y0+(nodeH-BLOCK)/2+LINE_H/2 : midY-BLOCK/2+LINE_H/2;
+    if (sy < prevBottom + 5) sy = prevBottom + 5;
+    labelStartY[n.index] = sy;
+    prevBottom = sy + BLOCK;
   });
 
-  // draw labels — วาง text elements ให้อยู่ใน viewBox
   ng.each(function(n) {
     const g = d3.select(this);
-    const midY = (n.y0 + n.y1) / 2;
+    const i = n.index;
+    const midY = (n.y0+n.y1)/2;
     const isLeft  = n.x0 <= ML + 1;
     const isRight = n.x1 >= IW - MR - 1;
-    const cx = (n.x0 + n.x1) / 2;
-    const i  = n.index;
+    const cx = (n.x0+n.x1)/2;
+    const nameParts = NODES[i].name.split("\n");
+    const s1 = NODES[i].sub1, s2 = NODES[i].sub2;
 
-    const name = nodeNames[i];
-    const s1   = nodeSub1[i];
-    const s2   = nodeSub2[i];
-
-    // สำหรับ name ที่มี \n ต้อง split
-    const nameParts = name.split("\n");
+    function drawBlock(anchor, xPos, sy, nameColor) {
+      let ly = sy;
+      nameParts.forEach(part => {
+        g.append("text").attr("x",xPos).attr("y",ly)
+          .attr("text-anchor",anchor).attr("dominant-baseline","middle")
+          .attr("font-size","13px").attr("font-weight","700")
+          .attr("fill",nameColor).attr("font-family",FF).text(part);
+        ly += LINE_H;
+      });
+      g.append("text").attr("x",xPos).attr("y",ly)
+        .attr("text-anchor",anchor).attr("dominant-baseline","middle")
+        .attr("font-size","10px").attr("fill","#9090b0").attr("font-family",FF).text(s1);
+      ly += LINE_H;
+      if (s2) g.append("text").attr("x",xPos).attr("y",ly)
+        .attr("text-anchor",anchor).attr("dominant-baseline","middle")
+        .attr("font-size","11px").attr("fill","#6070a0").attr("font-family",FF).text(s2);
+    }
 
     if (isLeft) {
-      const lx = n.x0 - 8;
-      const lineH = 13;
-      const totalLines = nameParts.length + 1 + (s2 ? 1 : 0);
-      const startY = midY - ((totalLines-1)/2) * lineH;
-      let ly = startY;
-      nameParts.forEach(part => {
-        g.append("text").attr("x",lx).attr("y",ly)
-          .attr("text-anchor","end").attr("dominant-baseline","middle")
-          .attr("font-size","11px").attr("font-weight","700").attr("fill","#e8f4fd").attr("font-family",FF)
-          .text(part);
-        ly += lineH;
-      });
-      g.append("text").attr("x",lx).attr("y",ly)
-        .attr("text-anchor","end").attr("dominant-baseline","middle")
-        .attr("font-size","10px").attr("fill","#7aadcc").attr("font-family",FF)
-        .text(s1);
-      ly += lineH;
-      if (s2) {
-        g.append("text").attr("x",lx).attr("y",ly)
-          .attr("text-anchor","end").attr("dominant-baseline","middle")
-          .attr("font-size","10px").attr("fill","#5a8aaa").attr("font-family",FF)
-          .text(s2);
-      }
+      const tl = nameParts.length + 1 + (s2?1:0);
+      drawBlock("end", n.x0-8, midY-((tl-1)/2)*LINE_H, "#1a1a2a");
     } else if (isRight) {
-      const lx = n.x1 + 8;
-      const lineH = 13;
-      // ใช้ de-overlapped startY
-      let ly = labelStartY[n.index] !== undefined ? labelStartY[n.index] : midY - lineH;
-      nameParts.forEach(part => {
-        g.append("text").attr("x",lx).attr("y",ly)
-          .attr("text-anchor","start").attr("dominant-baseline","middle")
-          .attr("font-size","11px").attr("font-weight","700").attr("fill",n.color).attr("font-family",FF)
-          .text(part);
-        ly += lineH;
-      });
-      g.append("text").attr("x",lx).attr("y",ly)
-        .attr("text-anchor","start").attr("dominant-baseline","middle")
-        .attr("font-size","10px").attr("fill","#7aadcc").attr("font-family",FF)
-        .text(s1);
-      ly += lineH;
-      if (s2) {
-        g.append("text").attr("x",lx).attr("y",ly)
-          .attr("text-anchor","start").attr("dominant-baseline","middle")
-          .attr("font-size","10px").attr("fill","#5a8aaa").attr("font-family",FF)
-          .text(s2);
-      }
+      drawBlock("start", n.x1+8, labelStartY[n.index]??midY-LINE_H, n.color);
     } else {
-      // middle: label เหนือ node
-      const lineH = 12;
-      const totalLines = nameParts.length + 1 + (s2 ? 1 : 0);
-      let ly = n.y0 - totalLines * lineH - 2;
-      nameParts.forEach(part => {
-        g.append("text").attr("x",cx).attr("y",ly)
-          .attr("text-anchor","middle").attr("dominant-baseline","middle")
-          .attr("font-size","11px").attr("font-weight","700").attr("fill",n.color).attr("font-family",FF)
-          .text(part);
-        ly += lineH;
-      });
-      g.append("text").attr("x",cx).attr("y",ly)
-        .attr("text-anchor","middle").attr("dominant-baseline","middle")
-        .attr("font-size","10px").attr("fill","#7aadcc").attr("font-family",FF)
-        .text(s1);
-      ly += lineH;
-      if (s2) {
-        g.append("text").attr("x",cx).attr("y",ly)
-          .attr("text-anchor","middle").attr("dominant-baseline","middle")
-          .attr("font-size","10px").attr("fill","#5a8aaa").attr("font-family",FF)
-          .text(s2);
-      }
+      // label ใต้ node เสมอ
+      drawBlock("middle", cx, n.y1 + 6, n.color);
     }
   });
 
-  // update waiting box
-  document.getElementById("w-count").innerHTML  = `${fmt(d.colpo)}<span class="w-unit">ราย</span>`;
+  document.getElementById("w-count").innerHTML  = `${fmt(total_colpo)}<span class="w-unit">ราย</span>`;
   document.getElementById("w-mean").innerHTML   = `${d.mean}<span class="w-unit">วัน</span>`;
   document.getElementById("w-median").innerHTML = `${d.median}<span class="w-unit">วัน</span>`;
 }
 
-// events
 document.querySelectorAll(".tab").forEach(t => {
   t.addEventListener("click", function() {
     document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
@@ -366,8 +297,7 @@ document.querySelectorAll(".tab").forEach(t => {
   });
 });
 document.getElementById("zone-select").addEventListener("change", function() {
-  curZone = +this.value;
-  draw();
+  curZone = +this.value; draw();
 });
 
 draw();
