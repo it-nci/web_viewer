@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankey – การส่งผู้ป่วยระดับจังหวัด</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Sarabun','Noto Sans Thai',sans-serif; background:#f8f7f4; color:#2c2c2a; }
+header { padding:20px 32px 14px; border-bottom:1px solid #e0ddd6; background:#fff; }
+header h1 { font-size:19px; font-weight:600; }
+header p { font-size:13px; color:#888; margin-top:3px; }
+.stat-bar { display:flex; gap:24px; padding:10px 32px; background:#fff; border-bottom:1px solid #e0ddd6; flex-wrap:wrap; }
+.stat { font-size:12px; color:#888; }
+.stat b { font-size:15px; color:#333; display:block; }
+.controls { display:flex; gap:10px; padding:10px 32px; background:#fff; border-bottom:1px solid #e0ddd6; flex-wrap:wrap; align-items:center; }
+.controls label { font-size:13px; color:#555; white-space:nowrap; }
+.controls select { font-size:12px; padding:4px 8px; border:1px solid #ccc; border-radius:6px; background:#fff; max-width:280px; }
+.controls input[type=range] { width:120px; }
+.controls span.val { font-size:13px; font-weight:500; min-width:28px; }
+.controls button { font-size:12px; padding:4px 12px; border:1px solid #ccc; border-radius:6px; background:#fff; cursor:pointer; color:#555; }
+.controls button:hover { background:#f0ede8; }
+.sep { width:1px; background:#e0ddd6; align-self:stretch; margin:0 4px; }
+#chart-wrap { padding:20px 32px; overflow-x:auto; }
+.tooltip { position:fixed; pointer-events:none; background:#fff; border:1px solid #ddd; border-radius:8px; padding:10px 14px; font-size:13px; line-height:1.6; box-shadow:0 4px 16px rgba(0,0,0,0.1); z-index:9999; max-width:280px; opacity:0; }
+.legend { display:flex; flex-wrap:wrap; gap:8px; padding:10px 32px 16px; }
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:#555; }
+.legend-swatch { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sankey Chart – การส่งผู้ป่วย RT ระดับจังหวัด (21 จังหวัดเป้าหมาย)</h1>
+  <p>Source: จังหวัด primary (21 จังหวัด) → Target: HNAME เรียงตาม NHSO_ZONE</p>
+</header>
+<div class="stat-bar">
+  <div class="stat"><b id="stat-total">-</b>จำนวน case</div>
+  <div class="stat"><b id="stat-src">-</b>จังหวัด</div>
+  <div class="stat"><b id="stat-tgt">-</b>โรงพยาบาล</div>
+  <div class="stat"><b id="stat-links">-</b>flow</div>
+</div>
+<div class="controls">
+  <label>จังหวัด (source):</label>
+  <select id="filter-src"><option value="all">ทั้งหมด</option></select>
+  <div class="sep"></div>
+  <label>โรงพยาบาล (target):</label>
+  <select id="filter-tgt"><option value="all">ทั้งหมด</option></select>
+  <div class="sep"></div>
+  <label>flow ขั้นต่ำ:</label>
+  <input type="range" id="thresh" min="0" max="200" value="0" step="5">
+  <span class="val" id="thresh-val">0</span>
+  <div class="sep"></div>
+  <button id="btn-reset">รีเซ็ต</button>
+</div>
+<div class="legend" id="legend"></div>
+<div id="chart-wrap"><svg id="sankey-svg"></svg></div>
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const DATA = {"labels": ["\u0e19\u0e04\u0e23\u0e2a\u0e27\u0e23\u0e23\u0e04\u0e4c", "\u0e2a\u0e38\u0e23\u0e32\u0e29\u0e0e\u0e23\u0e4c\u0e18\u0e32\u0e19\u0e35", "\u0e19\u0e04\u0e23\u0e23\u0e32\u0e0a\u0e2a\u0e35\u0e21\u0e32", "\u0e19\u0e19\u0e17\u0e1a\u0e38\u0e23\u0e35", "\u0e40\u0e1e\u0e0a\u0e23\u0e1a\u0e39\u0e23\u0e13\u0e4c", "\u0e01\u0e32\u0e0d\u0e08\u0e19\u0e1a\u0e38\u0e23\u0e35", "\u0e01\u0e33\u0e41\u0e1e\u0e07\u0e40\u0e1e\u0e0a\u0e23", "\u0e0a\u0e38\u0e21\u0e1e\u0e23", "\u0e2a\u0e38\u0e1e\u0e23\u0e23\u0e13\u0e1a\u0e38\u0e23\u0e35", "\u0e1b\u0e23\u0e32\u0e08\u0e35\u0e19\u0e1a\u0e38\u0e23\u0e35", "\u0e19\u0e04\u0e23\u0e1b\u0e10\u0e21", "\u0e2a\u0e23\u0e30\u0e41\u0e01\u0e49\u0e27", "\u0e15\u0e32\u0e01", "\u0e40\u0e25\u0e22", "\u0e1e\u0e23\u0e30\u0e19\u0e04\u0e23\u0e28\u0e23\u0e35\u0e2d\u0e22\u0e38\u0e18\u0e22\u0e32", "\u0e28\u0e23\u0e35\u0e2a\u0e30\u0e40\u0e01\u0e29", "\u0e2d\u0e38\u0e15\u0e23\u0e14\u0e34\u0e15\u0e16\u0e4c", "\u0e1a\u0e36\u0e07\u0e01\u0e32\u0e2c", "\u0e19\u0e23\u0e32\u0e18\u0e34\u0e27\u0e32\u0e2a", "\u0e19\u0e04\u0e23\u0e1e\u0e19\u0e21", "\u0e21\u0e38\u0e01\u0e14\u0e32\u0e2b\u0e32\u0e23", "\u0e23\u0e1e.\u0e19\u0e04\u0e23\u0e1e\u0e34\u0e07\u0e04\u0e4c", "\u0e23\u0e1e.\u0e21\u0e2b\u0e32\u0e23\u0e32\u0e0a\u0e19\u0e04\u0e23\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e43\u0e2b\u0e21\u0e48  \u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e43\u0e2b\u0e21\u0e48", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e25\u0e33\u0e1b\u0e32\u0e07", "\u0e23\u0e1e.\u0e40\u0e0a\u0e35\u0e22\u0e07\u0e23\u0e32\u0e22\u0e1b\u0e23\u0e30\u0e0a\u0e32\u0e19\u0e38\u0e40\u0e04\u0e23\u0e32\u0e30\u0e2b\u0e4c", "\u0e23\u0e1e.\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01\u0e23\u0e31\u0e07\u0e2a\u0e35\u0e23\u0e31\u0e01\u0e29\u0e32\u0e41\u0e25\u0e30\u0e40\u0e27\u0e0a\u0e28\u0e32\u0e2a\u0e15\u0e23\u0e4c\u0e19\u0e34\u0e27\u0e40\u0e04\u0e25\u0e35\u0e22\u0e23\u0e4c \u0e1e\u0e34\u0e29\u0e13\u0e38\u0e42\u0e25\u0e01", "\u0e23\u0e1e.\u0e1e\u0e38\u0e17\u0e18\u0e0a\u0e34\u0e19\u0e23\u0e32\u0e0a", "\u0e23\u0e1e.\u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e19\u0e40\u0e23\u0e28\u0e27\u0e23", "\u0e23\u0e1e.\u0e2a\u0e27\u0e23\u0e23\u0e04\u0e4c\u0e1b\u0e23\u0e30\u0e0a\u0e32\u0e23\u0e31\u0e01\u0e29\u0e4c", "\u0e23\u0e1e.\u0e18\u0e23\u0e23\u0e21\u0e28\u0e32\u0e2a\u0e15\u0e23\u0e4c\u0e40\u0e09\u0e25\u0e34\u0e21\u0e1e\u0e23\u0e30\u0e40\u0e01\u0e35\u0e22\u0e23\u0e15\u0e34", "\u0e23\u0e1e.\u0e21\u0e2b\u0e32\u0e27\u0e0a\u0e34\u0e23\u0e32\u0e25\u0e07\u0e01\u0e23\u0e13 \u0e18\u0e31\u0e0d\u0e1a\u0e38\u0e23\u0e35", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e25\u0e1e\u0e1a\u0e38\u0e23\u0e35", "\u0e23\u0e1e.\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e17\u0e32\u0e07\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01\u0e23\u0e31\u0e07\u0e2a\u0e35\u0e23\u0e31\u0e01\u0e29\u0e32 \u0e23\u0e32\u0e0a\u0e18\u0e32\u0e19\u0e35", "\u0e23\u0e1e.\u0e23\u0e32\u0e0a\u0e1a\u0e38\u0e23\u0e35", "\u0e23\u0e1e.\u0e2a\u0e21\u0e38\u0e17\u0e23\u0e2a\u0e32\u0e04\u0e23", "\u0e23\u0e1e.\u0e2a\u0e34\u0e19\u0e41\u0e1e\u0e17\u0e22\u0e4c \u0e19\u0e04\u0e23\u0e1b\u0e10\u0e21 \u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b\u0e02\u0e19\u0e32\u0e14\u0e43\u0e2b\u0e0d\u0e48", "\u0e23\u0e1e.\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b\u0e02\u0e19\u0e32\u0e14\u0e43\u0e2b\u0e0d\u0e48\u0e08\u0e38\u0e2c\u0e32\u0e23\u0e31\u0e15\u0e19\u0e4c 3 \u0e2d\u0e34\u0e19\u0e40\u0e15\u0e2d\u0e23\u0e4c", "\u0e23\u0e1e.\u0e1e\u0e23\u0e30\u0e1b\u0e01\u0e40\u0e01\u0e25\u0e49\u0e32", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e0a\u0e25\u0e1a\u0e38\u0e23\u0e35", "\u0e23\u0e1e.\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e17\u0e32\u0e07\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07 \u0e27\u0e34\u0e20\u0e32\u0e23\u0e32\u0e21\u0e2d\u0e21\u0e15\u0e30\u0e19\u0e04\u0e23\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01", "\u0e23\u0e1e.\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e17\u0e32\u0e07\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01\u0e41\u0e04\u0e19\u0e40\u0e0b\u0e2d\u0e23\u0e4c\u0e2d\u0e25\u0e34\u0e2d\u0e31\u0e19\u0e0b\u0e4c \u0e28\u0e23\u0e35\u0e23\u0e32\u0e0a\u0e32", "\u0e27\u0e34\u0e20\u0e32\u0e23\u0e32\u0e21 \u0e2a\u0e21\u0e38\u0e17\u0e23\u0e1b\u0e23\u0e32\u0e01\u0e32\u0e23 \u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e17\u0e31\u0e48\u0e27\u0e44\u0e1b\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01", "\u0e23\u0e1e.\u0e02\u0e2d\u0e19\u0e41\u0e01\u0e48\u0e19", "\u0e23\u0e1e.\u0e23\u0e49\u0e2d\u0e22\u0e40\u0e2d\u0e47\u0e14", "\u0e23\u0e1e.\u0e28\u0e23\u0e35\u0e19\u0e04\u0e23\u0e34\u0e19\u0e17\u0e23\u0e4c \u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e02\u0e2d\u0e19\u0e41\u0e01\u0e48\u0e19", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e2d\u0e38\u0e14\u0e23\u0e18\u0e32\u0e19\u0e35", "\u0e23\u0e1e.\u0e2a\u0e01\u0e25\u0e19\u0e04\u0e23", "\u0e23\u0e1e.\u0e21\u0e2b\u0e32\u0e23\u0e32\u0e0a\u0e19\u0e04\u0e23\u0e23\u0e32\u0e0a\u0e2a\u0e35\u0e21\u0e32", "\u0e23\u0e1e.\u0e2a\u0e38\u0e23\u0e34\u0e19\u0e17\u0e23\u0e4c", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e2d\u0e38\u0e1a\u0e25\u0e23\u0e32\u0e0a\u0e18\u0e32\u0e19\u0e35", "\u0e23\u0e1e.\u0e21\u0e2b\u0e32\u0e23\u0e32\u0e0a\u0e19\u0e04\u0e23\u0e28\u0e23\u0e35\u0e18\u0e23\u0e23\u0e21\u0e23\u0e32\u0e0a", "\u0e23\u0e1e.\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e2a\u0e38\u0e23\u0e32\u0e29\u0e0e\u0e23\u0e4c\u0e18\u0e32\u0e19\u0e35", "\u0e23\u0e1e.\u0e2a\u0e07\u0e02\u0e25\u0e32\u0e19\u0e04\u0e23\u0e34\u0e19\u0e17\u0e23\u0e4c  \u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e2a\u0e07\u0e02\u0e25\u0e32\u0e19\u0e04\u0e23\u0e34\u0e19\u0e17\u0e23\u0e4c", "\u0e23\u0e1e.\u0e2b\u0e32\u0e14\u0e43\u0e2b\u0e0d\u0e48", "\u0e23\u0e1e.\u0e08\u0e38\u0e2c\u0e32\u0e20\u0e23\u0e13\u0e4c", "\u0e23\u0e1e.\u0e08\u0e38\u0e2c\u0e32\u0e25\u0e07\u0e01\u0e23\u0e13\u0e4c\u0e2a\u0e20\u0e32\u0e01\u0e32\u0e0a\u0e32\u0e14\u0e44\u0e17\u0e22", "\u0e23\u0e1e.\u0e1e\u0e23\u0e30\u0e21\u0e07\u0e01\u0e38\u0e0e\u0e40\u0e01\u0e25\u0e49\u0e32", "\u0e23\u0e1e.\u0e20\u0e39\u0e21\u0e34\u0e1e\u0e25\u0e2d\u0e14\u0e38\u0e25\u0e22\u0e40\u0e14\u0e0a", "\u0e23\u0e1e.\u0e21\u0e07\u0e01\u0e38\u0e0e\u0e27\u0e31\u0e12\u0e19\u0e30", "\u0e23\u0e1e.\u0e23\u0e32\u0e0a\u0e27\u0e34\u0e16\u0e35", "\u0e23\u0e1e.\u0e23\u0e32\u0e21\u0e32\u0e18\u0e34\u0e1a\u0e14\u0e35  \u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e21\u0e2b\u0e34\u0e14\u0e25", "\u0e23\u0e1e.\u0e27\u0e0a\u0e34\u0e23\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25 \u0e04\u0e13\u0e30\u0e41\u0e1e\u0e17\u0e22\u0e28\u0e32\u0e2a\u0e15\u0e23\u0e4c\u0e27\u0e0a\u0e34\u0e23\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25 \u0e21\u0e2b\u0e32\u0e27\u0e34\u0e17\u0e22\u0e32\u0e25\u0e31\u0e22\u0e19\u0e27\u0e21\u0e34\u0e19\u0e17\u0e23\u0e32\u0e18\u0e34\u0e23\u0e32\u0e0a", "\u0e23\u0e1e.\u0e27\u0e31\u0e12\u0e42\u0e19\u0e2a\u0e16\u0e42\u0e23\u0e07\u0e1e\u0e22\u0e32\u0e1a\u0e32\u0e25\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e17\u0e32\u0e07\u0e42\u0e23\u0e04\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e02\u0e19\u0e32\u0e14\u0e01\u0e25\u0e32\u0e07", "\u0e23\u0e1e.\u0e28\u0e34\u0e23\u0e34\u0e23\u0e32\u0e0a", "\u0e23\u0e1e.\u0e40\u0e09\u0e1e\u0e32\u0e30\u0e17\u0e32\u0e07\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e01\u0e23\u0e38\u0e07\u0e40\u0e17\u0e1e\u0e02\u0e19\u0e32\u0e14\u0e40\u0e25\u0e47\u0e01", "\u0e2a\u0e16\u0e32\u0e1a\u0e31\u0e19\u0e21\u0e30\u0e40\u0e23\u0e47\u0e07\u0e41\u0e2b\u0e48\u0e07\u0e0a\u0e32\u0e15\u0e34"], "src": [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 12, 12, 12, 12, 12, 12, 12, 12, 12, 12, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 19, 19, 19, 19, 19, 19, 19, 19, 19, 19, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 18, 18, 18, 18, 17, 17, 17, 17, 17, 17, 17, 17, 17, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 20, 20, 20, 20, 20, 20, 20, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 13, 13, 13, 13, 13], "tgt": [54, 55, 29, 37, 56, 58, 47, 30, 31, 49, 33, 59, 60, 62, 63, 34, 35, 39, 64, 32, 41, 65, 54, 55, 25, 21, 26, 58, 30, 27, 31, 23, 59, 60, 63, 28, 40, 41, 65, 54, 55, 29, 37, 57, 50, 51, 33, 59, 60, 61, 63, 52, 64, 41, 65, 54, 55, 25, 26, 22, 27, 23, 60, 63, 48, 54, 55, 57, 58, 49, 33, 59, 60, 61, 62, 63, 34, 35, 39, 64, 41, 65, 54, 55, 38, 31, 45, 49, 60, 44, 63, 46, 42, 54, 55, 29, 37, 57, 47, 30, 31, 49, 60, 43, 44, 63, 48, 39, 64, 65, 54, 55, 29, 30, 27, 38, 31, 59, 60, 62, 63, 46, 28, 64, 41, 65, 54, 55, 29, 21, 57, 58, 47, 30, 31, 45, 49, 59, 60, 43, 61, 62, 63, 39, 64, 41, 65, 29, 52, 53, 65, 42, 55, 47, 45, 44, 63, 46, 39, 64, 54, 55, 29, 37, 56, 57, 58, 47, 30, 38, 59, 60, 61, 63, 48, 39, 64, 41, 65, 54, 55, 36, 29, 56, 57, 58, 47, 30, 38, 31, 59, 60, 63, 64, 32, 65, 55, 47, 45, 49, 43, 44, 46, 54, 55, 37, 56, 31, 49, 59, 60, 61, 44, 63, 48, 40, 54, 55, 29, 37, 56, 47, 30, 38, 59, 60, 62, 63, 34, 39, 40, 41, 65, 54, 55, 36, 29, 58, 30, 31, 33, 59, 60, 63, 34, 35, 39, 64, 32, 41, 65, 54, 55, 29, 58, 50, 51, 60, 43, 63, 52, 53, 64, 24, 41, 65, 25, 56, 26, 22, 27, 31, 23, 61, 63, 48, 24, 65, 42, 54, 55, 25, 29, 26, 58, 47, 30, 27, 38, 31, 45, 59, 60, 63, 28, 64, 65, 42, 55, 45, 60, 44], "val": [1, 7, 1, 1, 1, 1, 1, 16, 1, 1, 128, 8, 5, 12, 23, 20, 28, 30, 10, 1, 51, 20, 3, 3, 3, 1, 1, 1, 1, 64, 77, 1, 5, 2, 4, 162, 1, 3, 3, 3, 8, 2, 1, 2, 2, 155, 1, 13, 16, 1, 26, 12, 5, 5, 12, 1, 4, 41, 10, 16, 8, 32, 1, 3, 1, 11, 29, 4, 3, 1, 29, 18, 7, 2, 1, 107, 262, 79, 15, 9, 8, 19, 1, 2, 1, 1, 51, 10, 1, 8, 1, 313, 2, 3, 12, 1, 1, 2, 1543, 1, 2, 1, 10, 1, 2, 8, 5, 2, 1, 4, 7, 13, 4, 1, 30, 1, 62, 1, 10, 2, 5, 1, 582, 4, 8, 3, 46, 39, 2, 1, 2, 423, 2, 19, 1, 1, 1, 43, 27, 1, 7, 3, 63, 3, 25, 5, 122, 1, 70, 34, 1, 3, 1, 1, 129, 4, 1, 27, 1, 1, 1, 12, 7, 3, 2, 1, 1, 1, 76, 80, 6, 5, 1, 5, 1, 51, 2, 1, 2, 10, 11, 1, 72, 1, 4, 1, 1, 93, 1, 91, 42, 7, 4, 7, 139, 9, 1, 1, 1, 125, 3, 3, 1, 2, 5, 1, 1, 1, 604, 2, 4, 1, 1, 4, 5, 1, 2, 16, 6, 139, 1, 4, 17, 68, 1, 16, 2, 6, 1, 19, 9, 2, 1, 4, 13, 1, 3, 2, 3, 253, 5, 14, 8, 70, 1, 4, 5, 6, 53, 3, 15, 5, 12, 1, 1, 17, 554, 8, 1, 9, 20, 1, 2, 1, 4, 1, 15, 1, 4, 3, 2, 2, 60, 1, 2, 1, 1, 1, 12, 6, 7, 107, 3, 38, 1, 1, 1, 17, 2, 143, 1, 9, 4, 3, 2, 2, 11, 2, 1, 236, 1, 16], "tgt_zones": [1, 1, 1, 1, 2, 2, 2, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 6, 7, 7, 7, 8, 8, 9, 9, 10, 11, 11, 12, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13], "n_src": 21};
+
+const nSrc = DATA.n_src;
+const labels = DATA.labels;
+const tgtZones = DATA.tgt_zones;
+const nTgt = labels.length - nSrc;
+const srcColors = d3.schemeTableau10.concat(["#9c755f","#bab0ac","#76b7b2","#59a14f","#edc948","#b07aa1","#ff9da7","#9c755f","#4e79a7","#f28e2b","#e15759"]);
+const zoneColors = {1:'#4e79a7',2:'#1D9E75',3:'#D85A30',4:'#D4537E',5:'#7F77DD',6:'#BA7517',7:'#639922',8:'#E24B4A',9:'#0F6E56',10:'#993C1D',11:'#533AB7',12:'#c27ba0',13:'#888780'};
+
+const selSrc = document.getElementById('filter-src');
+for (let i=0;i<nSrc;i++) { const o=document.createElement('option'); o.value=i; o.textContent=labels[i]; selSrc.appendChild(o); }
+
+const selTgt = document.getElementById('filter-tgt');
+[...Array(nTgt).keys()].sort((a,b)=>tgtZones[a]-tgtZones[b]||a-b).forEach(t=>{
+  const o=document.createElement('option'); o.value=t;
+  const n=labels[t+nSrc]; o.textContent=`[Zone ${tgtZones[t]}] ${n.length>32?n.substring(0,30)+'…':n}`;
+  selTgt.appendChild(o);
+});
+
+const tooltip=document.getElementById('tooltip');
+let threshVal=0, filterSrc='all', filterTgt='all';
+
+selSrc.addEventListener('change',function(){filterSrc=this.value==='all'?'all':+this.value;draw();});
+selTgt.addEventListener('change',function(){filterTgt=this.value==='all'?'all':+this.value;draw();});
+document.getElementById('thresh').addEventListener('input',function(){threshVal=+this.value;document.getElementById('thresh-val').textContent=this.value;draw();});
+document.getElementById('btn-reset').addEventListener('click',function(){
+  selSrc.value='all';selTgt.value='all';document.getElementById('thresh').value=0;document.getElementById('thresh-val').textContent='0';
+  filterSrc='all';filterTgt='all';threshVal=0;draw();
+});
+
+function draw() {
+  const svg=d3.select('#sankey-svg'); svg.selectAll('*').remove();
+  let flows=DATA.src.map((s,i)=>({s,t:DATA.tgt[i]-nSrc,v:DATA.val[i]}));
+  if(filterSrc!=='all') flows=flows.filter(f=>f.s===filterSrc);
+  if(filterTgt!=='all') flows=flows.filter(f=>f.t===filterTgt);
+  flows=flows.filter(f=>f.v>=threshVal);
+
+  const activeSrc=[...new Set(flows.map(f=>f.s))].sort((a,b)=>a-b);
+  const activeTgt=[...new Set(flows.map(f=>f.t))].sort((a,b)=>tgtZones[a]-tgtZones[b]||a-b);
+  const totalFlow=flows.reduce((a,f)=>a+f.v,0);
+  document.getElementById('stat-total').textContent=totalFlow.toLocaleString();
+  document.getElementById('stat-src').textContent=activeSrc.length;
+  document.getElementById('stat-tgt').textContent=activeTgt.length;
+  document.getElementById('stat-links').textContent=flows.length;
+
+  if(!flows.length){
+    svg.attr('width',600).attr('height',80).append('text').attr('x',300).attr('y',44).attr('text-anchor','middle').attr('font-size','14px').attr('fill','#aaa').text('ไม่มีข้อมูลที่ตรงกับ filter ที่เลือก');
+    document.getElementById('legend').innerHTML=''; return;
+  }
+
+  const W=Math.max(900,document.getElementById('chart-wrap').clientWidth-64);
+  const perRow=Math.max(14,Math.min(40,1600/Math.max(activeTgt.length,10)));
+  const H=Math.max(480,activeTgt.length*(perRow+4)+60);
+  const margin={top:20,right:248,bottom:20,left:120};
+  const iW=W-margin.left-margin.right, iH=H-margin.top-margin.bottom, nodeW=12;
+
+  svg.attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const srcTotals={}, tgtTotals={};
+  activeSrc.forEach(s=>srcTotals[s]=0); activeTgt.forEach(t=>tgtTotals[t]=0);
+  flows.forEach(f=>{srcTotals[f.s]=(srcTotals[f.s]||0)+f.v; tgtTotals[f.t]=(tgtTotals[f.t]||0)+f.v;});
+
+  const srcGap=5, srcH=iH-(activeSrc.length-1)*srcGap;
+  const srcNodeH={},srcY={};let cy=0;
+  activeSrc.forEach(s=>{srcNodeH[s]=(srcTotals[s]/totalFlow)*srcH;srcY[s]=cy;cy+=srcNodeH[s]+srcGap;});
+
+  const tgtGap=3, tgtH=iH-(activeTgt.length-1)*tgtGap;
+  const tgtNodeH={},tgtY={};cy=0;
+  activeTgt.forEach(t=>{tgtNodeH[t]=(tgtTotals[t]/totalFlow)*tgtH;tgtY[t]=cy;cy+=tgtNodeH[t]+tgtGap;});
+
+  const srcOff={},tgtOff={};
+  activeSrc.forEach(s=>srcOff[s]=0); activeTgt.forEach(t=>tgtOff[t]=0);
+  flows.sort((a,b)=>tgtZones[a.t]-tgtZones[b.t]||a.t-b.t);
+
+  flows.forEach(f=>{
+    const h=(f.v/totalFlow)*iH, sy=srcY[f.s]+srcOff[f.s], ty=tgtY[f.t]+tgtOff[f.t];
+    srcOff[f.s]+=h; tgtOff[f.t]+=h;
+    const cx=iW/2, color=srcColors[f.s%srcColors.length];
+    const path=g.append('path')
+      .attr('d',`M${nodeW},${sy} C${cx},${sy} ${cx},${ty} ${iW},${ty} L${iW},${ty+h} C${cx},${ty+h} ${cx},${sy+h} ${nodeW},${sy+h} Z`)
+      .attr('fill',color).attr('opacity',0.28).attr('stroke','none').style('cursor','pointer');
+    path.on('mouseover',function(ev){
+      d3.select(this).attr('opacity',0.65); tooltip.style.opacity=1;
+      tooltip.innerHTML=`<b>${labels[f.s]}</b><br>→ ${labels[f.t+nSrc]}<br>Zone ${tgtZones[f.t]}<br>จำนวน: <b>${f.v.toLocaleString()}</b>`;
+    }).on('mousemove',function(ev){tooltip.style.left=(ev.clientX+14)+'px';tooltip.style.top=(ev.clientY-30)+'px';
+    }).on('mouseout',function(){d3.select(this).attr('opacity',0.28);tooltip.style.opacity=0;});
+  });
+
+  activeSrc.forEach(s=>{
+    const color=srcColors[s%srcColors.length];
+    g.append('rect').attr('x',0).attr('y',srcY[s]).attr('width',nodeW).attr('height',srcNodeH[s]).attr('fill',color).attr('rx',2);
+    g.append('text').attr('x',-6).attr('y',srcY[s]+srcNodeH[s]/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('font-size','12px').attr('font-weight','500').attr('fill','#333').text(labels[s]);
+    if(srcNodeH[s]>12) g.append('text').attr('x',nodeW+4).attr('y',srcY[s]+srcNodeH[s]/2).attr('dominant-baseline','middle').attr('font-size','10px').attr('fill','#aaa').text(srcTotals[s].toLocaleString());
+  });
+
+  let lastZone=null;
+  activeTgt.forEach(t=>{
+    const zone=tgtZones[t], color=zoneColors[zone]||'#888';
+    if(zone!==lastZone){g.append('text').attr('x',iW+nodeW+6).attr('y',tgtY[t]-2).attr('font-size','10px').attr('font-weight','600').attr('fill',color).text(`Zone ${zone}`); lastZone=zone;}
+    g.append('rect').attr('x',iW).attr('y',tgtY[t]).attr('width',nodeW).attr('height',tgtNodeH[t]).attr('fill',color).attr('rx',2);
+    const name=labels[t+nSrc], short=name.length>28?name.substring(0,26)+'…':name;
+    g.append('text').attr('x',iW+nodeW+6).attr('y',tgtY[t]+tgtNodeH[t]/2).attr('dominant-baseline','middle').attr('font-size','11px').attr('fill','#444').text(short);
+  });
+
+  const leg=document.getElementById('legend');
+  leg.innerHTML='<span style="font-size:12px;font-weight:600;color:#555;margin-right:4px;">จังหวัด:</span>';
+  activeSrc.forEach(s=>{
+    leg.innerHTML+=`<span class="legend-item"><span class="legend-swatch" style="background:${srcColors[s%srcColors.length]}"></span>${labels[s]} (${srcTotals[s].toLocaleString()})</span>`;
+  });
+}
+draw();
+</script>
+</body>
+</html>
