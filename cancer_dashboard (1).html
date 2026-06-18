@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบรายงานผลการดูแลโรคมะเร็ง — ต้นแบบ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Anuphan:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --ink:#0F2E35; --ink2:#1C474F; --teal:#0E8C82; --teal-soft:#CFE9E5;
+    --amber:#E0922F; --surface:#EEF2F1; --card:#FFFFFF; --line:#DDE6E4;
+    --text:#16292C; --muted:#5E777C;
+    --good:#1F9D6B; --watch:#E0A11B; --bad:#D85555;
+    --good-bg:#E6F4EE; --watch-bg:#FBF1DC; --bad-bg:#FBE9E9;
+    --shadow:0 1px 2px rgba(15,46,53,.05), 0 6px 22px rgba(15,46,53,.06);
+    --fdisplay:"Anuphan","IBM Plex Sans Thai","Sarabun","Noto Sans Thai","Leelawadee UI","Tahoma",system-ui,sans-serif;
+    --fbody:"IBM Plex Sans Thai","Sarabun","Noto Sans Thai","Leelawadee UI","Tahoma",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--fbody); color:var(--text); background:var(--surface);
+    -webkit-font-smoothing:antialiased; line-height:1.5; font-size:15px;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 18px 56px}
+
+  /* ---------- Header ---------- */
+  header.top{
+    background:linear-gradient(180deg,var(--ink) 0%, var(--ink2) 100%);
+    color:#EAF4F2; border-bottom:3px solid var(--teal);
+  }
+  .top-inner{max-width:1180px; margin:0 auto; padding:18px 18px 0}
+  .brandrow{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap}
+  .brand h1{font-family:var(--fdisplay); font-weight:700; font-size:22px; margin:0; letter-spacing:.2px}
+  .brand .sub{color:#9FC4C1; font-size:13px; margin-top:3px}
+  .freshness{font-size:12px; color:#9FC4C1; text-align:right; min-width:160px}
+  .freshness b{color:#EAF4F2; font-weight:600}
+  .dot-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:5px;vertical-align:middle}
+
+  .filters{display:flex; gap:10px; flex-wrap:wrap; margin:14px 0 16px}
+  .fld{display:flex; flex-direction:column; gap:3px}
+  .fld label{font-size:11px; color:#9FC4C1; letter-spacing:.4px; text-transform:uppercase}
+  .fld select{
+    font-family:var(--fbody); font-size:14px; color:var(--text);
+    background:#fff; border:1px solid rgba(255,255,255,.25); border-radius:8px;
+    padding:7px 30px 7px 11px; min-width:150px; cursor:pointer; appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235E777C' stroke-width='2.5'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat; background-position:right 10px center;
+  }
+  .fld select:focus-visible{outline:2px solid var(--amber); outline-offset:1px}
+
+  /* ---------- Pathway spine (signature) ---------- */
+  .spine{display:flex; gap:0; overflow-x:auto; padding-bottom:2px; scrollbar-width:thin}
+  .stage{
+    position:relative; flex:1 0 auto; min-width:150px; text-align:left;
+    background:transparent; border:none; cursor:pointer; color:#BFD8D5;
+    padding:14px 16px 16px; font-family:var(--fbody);
+    border-bottom:3px solid transparent; transition:background .15s,color .15s;
+  }
+  .stage:hover{background:rgba(255,255,255,.06); color:#EAF4F2}
+  .stage:focus-visible{outline:2px solid var(--amber); outline-offset:-2px}
+  .stage .no{font-family:var(--fdisplay); font-size:12px; color:#7FB0AC; font-weight:600; letter-spacing:1px}
+  .stage .nm{display:block; font-weight:600; font-size:15px; margin-top:2px; line-height:1.25}
+  .stage .en{display:block; font-size:11px; color:#7FB0AC; margin-top:1px}
+  .stage .pip{position:absolute; top:16px; right:16px; width:9px; height:9px; border-radius:50%}
+  .stage::after{content:""; position:absolute; top:50%; right:-1px; width:1px; height:30px; background:rgba(255,255,255,.12)}
+  .stage:last-child::after{display:none}
+  .stage[aria-selected="true"]{
+    background:var(--surface); color:var(--ink); border-bottom-color:var(--amber);
+    border-radius:10px 10px 0 0;
+  }
+  .stage[aria-selected="true"] .no,.stage[aria-selected="true"] .en{color:var(--teal)}
+
+  /* ---------- Body ---------- */
+  .stage-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:22px 0 4px}
+  .stage-head h2{font-family:var(--fdisplay); font-size:20px; margin:0; color:var(--ink)}
+  .stage-head p{margin:0; color:var(--muted); font-size:13.5px}
+
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:16px 0 6px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 15px; box-shadow:var(--shadow); position:relative; overflow:hidden}
+  .kpi .bar{position:absolute; left:0; top:0; bottom:0; width:4px}
+  .kpi .lab{font-size:12.5px; color:var(--muted); line-height:1.35; min-height:34px}
+  .kpi .val{font-family:var(--fdisplay); font-size:30px; font-weight:700; color:var(--ink); margin-top:6px; line-height:1}
+  .kpi .val small{font-size:14px; font-weight:600; color:var(--muted); margin-left:3px}
+  .kpi .tgt{font-size:11.5px; color:var(--muted); margin-top:8px; display:flex; align-items:center; gap:6px}
+  .badge{font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:20px}
+  .b-good{background:var(--good-bg); color:var(--good)} .b-watch{background:var(--watch-bg); color:#9A6B05} .b-bad{background:var(--bad-bg); color:var(--bad)}
+
+  .grid2{display:grid; grid-template-columns:1.4fr 1fr; gap:14px; margin-top:14px}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); padding:16px 17px; min-width:0}
+  .panel h3{font-family:var(--fdisplay); font-size:15px; margin:0 0 2px; color:var(--ink)}
+  .panel .cap{font-size:12px; color:var(--muted); margin:0 0 12px}
+  .chart-box{position:relative; height:248px}
+  .chart-box.tall{height:300px}
+
+  /* ---------- Heat strip ---------- */
+  .heatgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:7px}
+  .hcell{border:1px solid var(--line); border-radius:9px; padding:9px 8px; cursor:pointer; text-align:center; transition:transform .12s, box-shadow .12s; color:#13343a}
+  .hcell:hover{transform:translateY(-2px); box-shadow:var(--shadow)}
+  .hcell:focus-visible{outline:2px solid var(--ink); outline-offset:1px}
+  .hcell.sel{outline:2.5px solid var(--ink); outline-offset:0}
+  .hcell .z{font-family:var(--fdisplay); font-size:13px; font-weight:700}
+  .hcell .v{font-size:11.5px; font-weight:600; opacity:.85}
+  .legend{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); margin-top:11px; flex-wrap:wrap}
+  .legend .sw{width:22px; height:9px; border-radius:2px; display:inline-block}
+
+  /* ---------- Notes / footer ---------- */
+  .mock-banner{
+    background:var(--watch-bg); border:1px solid #EBD9A8; color:#7A5A06;
+    border-radius:10px; padding:9px 14px; font-size:12.5px; margin:16px 0 0;
+    display:flex; gap:8px; align-items:center;
+  }
+  footer.foot{margin-top:26px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:12px}
+  footer.foot b{color:var(--ink2)}
+  .src{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+  .chip{background:#fff; border:1px solid var(--line); border-radius:20px; padding:3px 11px; font-size:11.5px; color:var(--ink2)}
+
+  @media (max-width:860px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+    .heatgrid{grid-template-columns:repeat(4,1fr)}
+  }
+  @media (max-width:520px){
+    .kpis{grid-template-columns:1fr 1fr}
+    .brand h1{font-size:19px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brandrow">
+      <div class="brand">
+        <h1>ระบบรายงานผลการดูแลโรคมะเร็ง</h1>
+        <div class="sub">Cancer Care Performance Dashboard · ประเทศ / เขตสุขภาพ / จังหวัด</div>
+      </div>
+      <div class="freshness">
+        <div><span class="dot-live"></span><b>อัปเดตล่าสุด</b> 1 มิ.ย. 2567</div>
+        <div>รอบข้อมูล: รายเดือน · ความครบถ้วน 94%</div>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="fld">
+        <label>ระดับการดู</label>
+        <select id="f-level"></select>
+      </div>
+      <div class="fld">
+        <label>ชนิดมะเร็ง</label>
+        <select id="f-cancer"></select>
+      </div>
+      <div class="fld">
+        <label>ปีงบประมาณ</label>
+        <select id="f-year">
+          <option>2567</option><option>2566</option><option>2565</option>
+        </select>
+      </div>
+      <div class="fld">
+        <label>เพศ</label>
+        <select id="f-sex"><option>ทั้งหมด</option><option>หญิง</option><option>ชาย</option></select>
+      </div>
+      <div class="fld">
+        <label>สิทธิการรักษา</label>
+        <select id="f-scheme"><option>ทุกสิทธิ</option><option>บัตรทอง (UC)</option><option>ประกันสังคม</option><option>ข้าราชการ</option></select>
+      </div>
+    </div>
+
+    <div class="spine" id="spine" role="tablist" aria-label="เส้นทางการดูแลโรคมะเร็ง"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="stage-head">
+    <h2 id="st-title"></h2>
+    <p id="st-desc"></p>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3 id="cA-title"></h3>
+      <p class="cap" id="cA-cap"></p>
+      <div class="chart-box tall"><canvas id="chartA"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3 id="hs-title">ภาพรวมราย 13 เขตสุขภาพ</h3>
+      <p class="cap" id="hs-cap">คลิกเขตเพื่อเจาะลึก · สีเข้ม = ผลงานดี</p>
+      <div class="heatgrid" id="heat"></div>
+      <div class="legend">
+        <span>ต่ำกว่าเป้า</span>
+        <span class="sw" style="background:#F6C9C0"></span>
+        <span class="sw" style="background:#F3E0A6"></span>
+        <span class="sw" style="background:#A9D9C9"></span>
+        <span class="sw" style="background:#0E8C82"></span>
+        <span>ถึงเป้า</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2" style="grid-template-columns:1fr 1fr">
+    <div class="panel">
+      <h3 id="cB-title"></h3>
+      <p class="cap" id="cB-cap"></p>
+      <div class="chart-box"><canvas id="chartB"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3 id="cC-title"></h3>
+      <p class="cap" id="cC-cap"></p>
+      <div class="chart-box"><canvas id="chartC"></canvas></div>
+    </div>
+  </div>
+
+  <div class="mock-banner">
+    ⚠️ <span><b>ข้อมูลในต้นแบบนี้เป็นข้อมูลสังเคราะห์เพื่อสาธิตการออกแบบเท่านั้น</b> ไม่ใช่สถิติจริง — ใช้เพื่อพิจารณาโครงสร้างตัวชี้วัดและรูปแบบการแสดงผล</span>
+  </div>
+
+  <footer class="foot">
+    <div><b>แหล่งข้อมูลที่ออกแบบให้เชื่อมต่อ (data sources):</b></div>
+    <div class="src">
+      <span class="chip">HDC กระทรวงสาธารณสุข (43 แฟ้ม)</span>
+      <span class="chip">ทะเบียนมะเร็งระดับประชากร (PBCR)</span>
+      <span class="chip">ทะเบียนมะเร็งโรงพยาบาล (HBCR) / สถาบันมะเร็งฯ</span>
+      <span class="chip">ฐานเบิกจ่าย สปสช. (e-Claim)</span>
+      <span class="chip">โปรแกรมคัดกรอง (Pap/HPV DNA, FIT, Mammogram)</span>
+      <span class="chip">มะเร็งรักษาทุกที่ (Cancer Anywhere)</span>
+      <span class="chip">ทะเบียนการตาย (Vital Registration)</span>
+      <span class="chip">ฐานข้อมูลรังสีรักษา/เคมีบำบัด</span>
+    </div>
+    <div style="margin-top:10px">เชื่อมโยงระเบียนด้วยเลขบัตรประชาชน 13 หลัก (de-identified) · มาตรฐาน ASR ปรับอายุ World Std · เคารพ PDPA · เปรียบเทียบหน่วยบริการด้วย funnel plot</div>
+  </footer>
+</main>
+
+<script>
+const CANCERS = {
+  all:'ทุกชนิด', breast:'เต้านม', cervix:'ปากมดลูก',
+  colorectal:'ลำไส้ใหญ่และไส้ตรง', liver:'ตับและท่อน้ำดี', lung:'ปอด'
+};
+const COL = {ink:'#0F2E35', teal:'#0E8C82', amber:'#E0922F', good:'#1F9D6B',
+  watch:'#E0A11B', bad:'#D85555', muted:'#5E777C', line:'#DDE6E4', teal2:'#7FC0B9'};
+
+Chart.defaults.font.family = "'IBM Plex Sans Thai','Sarabun','Tahoma',sans-serif";
+Chart.defaults.font.size = 12;
+Chart.defaults.color = '#5E777C';
+Chart.defaults.plugins.legend.labels.boxWidth = 12;
+Chart.defaults.plugins.legend.labels.boxHeight = 12;
+
+const STAGES = [
+  {id:'prevent',  no:'01', nm:'ป้องกัน',           en:'Prevention',  desc:'ลดปัจจัยเสี่ยงและภูมิคุ้มกัน — วัคซีน HPV/HBV, บุหรี่-สุรา, พยาธิใบไม้ตับ'},
+  {id:'screen',   no:'02', nm:'คัดกรอง',           en:'Screening',   desc:'ความครอบคลุมและคุณภาพการคัดกรองตามกลุ่มเป้าหมาย และการติดตามผลผิดปกติ'},
+  {id:'diagnose', no:'03', nm:'วินิจฉัย · ระยะโรค', en:'Diagnosis',   desc:'การกระจายระยะโรคเมื่อวินิจฉัย ความครบของพยาธิ และเวลารอวินิจฉัย'},
+  {id:'treat',    no:'04', nm:'รักษา · เวลารอคอย',  en:'Treatment',   desc:'เวลารอคอยเทียบเป้า Service Plan, การประชุม MDT และการรักษาครบตามแผน'},
+  {id:'outcome',  no:'05', nm:'ผลลัพธ์ · รอดชีพ',   en:'Outcomes',    desc:'อัตรารอดชีพ, MIR, อุบัติการณ์และอัตราตายปรับอายุ (ASR), การเลื่อนระยะโรค'},
+  {id:'support',  no:'06', nm:'ประคับประคอง · เข้าถึง', en:'Palliative & Equity', desc:'การดูแลแบบประคับประคอง การเข้าถึงยา และความเป็นธรรมทางภูมิศาสตร์/การเงิน'}
+];
+
+// status helper: higher-better unless invert
+function stat(val,target,invert=false){
+  const ok = invert ? val<=target : val>=target;
+  const near = invert ? val<=target*1.15 : val>=target*0.85;
+  if(ok) return 'good'; if(near) return 'watch'; return 'bad';
+}
+const STATLAB={good:'ถึงเป้า',watch:'ใกล้เป้า',bad:'ต่ำกว่าเป้า'};
+
+// per-stage content factory (synthetic). cancer filter tweaks selected stages.
+function survivalByCancer(c){
+  const m={all:41,breast:85,cervix:66,colorectal:55,liver:15,lung:13};
+  return m[c]??41;
+}
+function earlyStageByCancer(c){
+  const m={all:46,breast:62,cervix:58,colorectal:44,liver:21,lung:24};
+  return m[c]??46;
+}
+function mirByCancer(c){
+  const m={all:0.62,breast:0.18,cervix:0.36,colorectal:0.46,liver:0.86,lung:0.88};
+  return m[c]??0.62;
+}
+
+function buildStage(id, cancer){
+  const C = CANCERS[cancer];
+  if(id==='prevent') return {
+    kpis:[
+      {lab:'ความครอบคลุมวัคซีน HPV (เด็กหญิง ป.5)', val:72, unit:'%', target:90},
+      {lab:'คัดกรอง HBV/HCV ในกลุ่มเสี่ยง', val:58, unit:'%', target:80},
+      {lab:'ความชุกการสูบบุหรี่ (ผู้ใหญ่)', val:17, unit:'%', target:15, invert:true},
+      {lab:'คัดกรองพยาธิใบไม้ตับ เขตเสี่ยง (อีสาน)', val:41, unit:'%', target:60},
+    ],
+    A:{title:'แนวโน้มความครอบคลุมวัคซีน HPV', cap:'ปี 2563–2567 · เทียบเป้าหมาย 90%',
+      fn:c=>lineTrend(['2563','2564','2565','2566','2567'],[51,55,60,67,72],90,'ความครอบคลุม HPV (%)')},
+    B:{title:'ปัจจัยเสี่ยงสำคัญที่ปรับเปลี่ยนได้', cap:'ความชุกในประชากร — ยิ่งต่ำยิ่งดี',
+      fn:c=>barH(['สูบบุหรี่','ดื่มสุราเสี่ยง','อ้วน/BMI≥25','พยาธิใบไม้ตับ (เสี่ยง)'],[17,28,38,9],COL.amber,'ความชุก (%)')},
+    C:{title:'ภูมิคุ้มกันไวรัสตับอักเสบบี', cap:'สัดส่วนผู้มีภูมิคุ้มกันตามกลุ่มอายุ',
+      fn:c=>doughnut(['มีภูมิคุ้มกัน','ไม่มี/ไม่ทราบ'],[64,36])},
+    heat:'ความครอบคลุมวัคซีน HPV', heatBase:72
+  };
+
+  if(id==='screen') return {
+    kpis:[
+      {lab:`ความครอบคลุมคัดกรองมะเร็งปากมดลูก (5 ปี)`, val:64, unit:'%', target:80},
+      {lab:'ความครอบคลุมคัดกรองมะเร็งเต้านม (CBE)', val:70, unit:'%', target:80},
+      {lab:'ความครอบคลุม FIT มะเร็งลำไส้ (50–70 ปี)', val:38, unit:'%', target:50},
+      {lab:'ผิดปกติ → ส่องกล้องติดตาม (colonoscopy)', val:62, unit:'%', target:85},
+    ],
+    A:{title:'ความครอบคลุมการคัดกรองแยกโปรแกรม', cap:'เทียบเป้าหมายรายโปรแกรม (เส้นประ = เป้า)',
+      fn:c=>barTarget(['ปากมดลูก','เต้านม','ลำไส้ใหญ่'],[64,70,38],[80,80,50])},
+    B:{title:'อัตราผลบวกและการติดตาม (cascade)', cap:'จากคัดกรอง → ผลผิดปกติ → ติดตามวินิจฉัย',
+      fn:c=>cascade(['คัดกรอง','ผลผิดปกติ','ติดตามวินิจฉัย','วินิจฉัยมะเร็ง'],[100,9.2,5.7,1.1])},
+    C:{title:'แนวโน้มความครอบคลุม HPV DNA', cap:'เปลี่ยนจาก Pap → HPV DNA self-sampling',
+      fn:c=>lineTrend(['2563','2564','2565','2566','2567'],[45,52,58,61,64],80,'ความครอบคลุม (%)')},
+    heat:'ดัชนีคัดกรองรวม', heatBase:60
+  };
+
+  if(id==='diagnose') return {
+    kpis:[
+      {lab:`สัดส่วนวินิจฉัยระยะต้น (I–II) · ${C}`, val:earlyStageByCancer(cancer), unit:'%', target:60},
+      {lab:'ความครบถ้วนการยืนยันทางพยาธิ/เซลล์วิทยา', val:88, unit:'%', target:90},
+      {lab:'มัธยฐานเวลา อาการ → วินิจฉัย', val:35, unit:'วัน', target:30, invert:true},
+      {lab:'สัดส่วนพบจากการคัดกรอง (ไม่รออาการ)', val:22, unit:'%', target:40},
+    ],
+    A:{title:'การกระจายระยะโรคเมื่อวินิจฉัย', cap:`แยกตามชนิดมะเร็ง · เน้นเพิ่มสัดส่วนระยะ I–II`,
+      fn:c=>stagedStack()},
+    B:{title:'แนวโน้มสัดส่วนระยะต้น (stage shift)', cap:`${C} · เป้าหมายเลื่อนสู่ระยะต้นมากขึ้น`,
+      fn:c=>lineTrend(['2563','2564','2565','2566','2567'],
+        [earlyStageByCancer(cancer)-9,earlyStageByCancer(cancer)-6,earlyStageByCancer(cancer)-4,earlyStageByCancer(cancer)-2,earlyStageByCancer(cancer)],60,'ระยะ I–II (%)')},
+    C:{title:'ช่องทางเข้าสู่การวินิจฉัย', cap:'แหล่งที่ตรวจพบผู้ป่วยรายใหม่',
+      fn:c=>doughnut(['มาด้วยอาการ','จากการคัดกรอง','พบโดยบังเอิญ','ส่งต่อ'],[58,22,9,11])},
+    heat:'สัดส่วนวินิจฉัยระยะต้น', heatBase:earlyStageByCancer(cancer)
+  };
+
+  if(id==='treat') return {
+    kpis:[
+      {lab:'ได้ผ่าตัดภายใน ≤ 4 สัปดาห์', val:71, unit:'%', target:80},
+      {lab:'ได้เคมีบำบัดภายใน ≤ 6 สัปดาห์', val:80, unit:'%', target:80},
+      {lab:'ได้รังสีรักษาภายใน ≤ 6 สัปดาห์', val:58, unit:'%', target:80},
+      {lab:'ผ่านการประชุมทีมสหสาขา (MDT/Tumor board)', val:64, unit:'%', target:80},
+    ],
+    A:{title:'เวลารอคอยเทียบเป้า Service Plan', cap:'% ผู้ป่วยที่ได้รับการรักษาภายในเวลาเป้าหมาย',
+      fn:c=>barTarget(['ผ่าตัด ≤4 wk','เคมี ≤6 wk','รังสี ≤6 wk'],[71,80,58],[80,80,80])},
+    B:{title:'การกระจายเวลารอรังสีรักษา', cap:'คอขวดเครื่องฉายแสง (LINAC) · มัธยฐาน 41 วัน',
+      fn:c=>histWait()},
+    C:{title:'รูปแบบการรักษาที่ได้รับ', cap:'สัดส่วน modality หลัก (อาจได้หลายอย่าง)',
+      fn:c=>barH(['ผ่าตัด','เคมีบำบัด','รังสีรักษา','ฮอร์โมน/มุ่งเป้า','ประคับประคอง'],[58,49,37,21,16],COL.teal,'สัดส่วนผู้ป่วย (%)')},
+    heat:'เวลารอรังสีรักษาภายในเป้า', heatBase:58
+  };
+
+  if(id==='outcome') return {
+    kpis:[
+      {lab:`อัตรารอดชีพ 5 ปี · ${C}`, val:survivalByCancer(cancer), unit:'%', target:60},
+      {lab:`MIR (ตาย/ป่วย) · ${C}`, val:mirByCancer(cancer), unit:'', target:0.4, invert:true, dec:2},
+      {lab:'อุบัติการณ์ปรับอายุ ASR', val:150, unit:'/แสน', target:140, invert:true},
+      {lab:'อัตราตายปรับอายุ ASR', val:95, unit:'/แสน', target:80, invert:true},
+    ],
+    A:{title:'อัตรารอดชีพ 5 ปี รายชนิดมะเร็ง', cap:'ปรับด้วยวิธี relative survival',
+      fn:c=>barTarget(['เต้านม','ปากมดลูก','ลำไส้','ตับ/ท่อน้ำดี','ปอด'],[85,66,55,15,13],[60,60,60,60,60])},
+    B:{title:'แนวโน้มอุบัติการณ์เทียบอัตราตาย (ASR)', cap:'ต่อประชากรแสนคน ปรับอายุ',
+      fn:c=>dualTrend()},
+    C:{title:'เปรียบเทียบ 13 เขต ด้วย funnel plot', cap:'MIR เทียบจำนวนผู้ป่วย · ในแถบควบคุม = ปกติ',
+      fn:c=>funnel(mirByCancer(cancer))},
+    heat:'อัตรารอดชีพ 5 ปี', heatBase:survivalByCancer(cancer)
+  };
+
+  // support / equity
+  return {
+    kpis:[
+      {lab:'ความครอบคลุมการดูแลแบบประคับประคอง', val:55, unit:'%', target:75},
+      {lab:'การเข้าถึงยาแก้ปวดกลุ่ม opioid (ดัชนี)', val:60, unit:'%', target:80},
+      {lab:'มะเร็งรักษาทุกที่ — ส่งต่อสำเร็จ', val:78, unit:'%', target:90},
+      {lab:'ครัวเรือนที่มีรายจ่ายสุขภาพวิกฤต', val:6, unit:'%', target:3, invert:true},
+    ],
+    A:{title:'ความเป็นธรรมในผลลัพธ์ เมือง–ชนบท', cap:'อัตรารอดชีพ 5 ปี เทียบตามที่อยู่อาศัย',
+      fn:c=>groupedEquity()},
+    B:{title:'แนวโน้มความครอบคลุมการดูแลประคับประคอง', cap:'รวมการดูแลที่บ้านและในสถานพยาบาล',
+      fn:c=>lineTrend(['2563','2564','2565','2566','2567'],[38,44,49,52,55],75,'ความครอบคลุม (%)')},
+    C:{title:'อุปสรรคการเข้าถึงการรักษา', cap:'สาเหตุที่ผู้ป่วยรายงาน (ตอบได้หลายข้อ)',
+      fn:c=>barH(['ระยะทาง/เดินทาง','ค่าใช้จ่ายแฝง','คิวยาว','ขาดข้อมูล','ภาระดูแลครอบครัว'],[34,27,41,19,23],COL.amber,'สัดส่วน (%)')},
+    heat:'ความครอบคลุมประคับประคอง', heatBase:55
+  };
+}
+
+/* ---------- chart builders ---------- */
+let charts={};
+function destroyCharts(){ Object.values(charts).forEach(c=>c&&c.destroy()); charts={}; }
+const gridCfg={grid:{color:'#EEF2F1'},ticks:{padding:6}};
+function noLegend(){return {legend:{display:false}}}
+
+function lineTrend(labels,data,target,name){
+  return {type:'line', data:{labels, datasets:[
+    {label:name,data,borderColor:COL.teal,backgroundColor:'rgba(14,140,130,.10)',fill:true,tension:.32,pointRadius:4,pointBackgroundColor:COL.teal,borderWidth:2.5},
+    {label:'เป้าหมาย',data:labels.map(()=>target),borderColor:COL.amber,borderDash:[6,5],pointRadius:0,borderWidth:2,fill:false}
+  ]}, options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:false,...gridCfg},x:gridCfg}}};
+}
+function barTarget(labels,vals,targets){
+  return {type:'bar', data:{labels, datasets:[
+    {label:'ผลงาน',data:vals,backgroundColor:vals.map((v,i)=>{const s=stat(v,targets[i]);return s==='good'?COL.good:s==='watch'?COL.watch:COL.bad;}),borderRadius:6,maxBarThickness:46},
+    {label:'เป้าหมาย',type:'line',data:targets,borderColor:COL.ink,borderDash:[5,4],pointStyle:'rectRot',pointRadius:6,pointBackgroundColor:COL.ink,borderWidth:0,showLine:false}
+  ]}, options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,...gridCfg},x:gridCfg}}};
+}
+function barH(labels,vals,color,name){
+  return {type:'bar', data:{labels, datasets:[{label:name,data:vals,backgroundColor:color,borderRadius:6,maxBarThickness:26}]},
+    options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,...gridCfg},y:gridCfg}}};
+}
+function doughnut(labels,vals){
+  return {type:'doughnut', data:{labels, datasets:[{data:vals,backgroundColor:[COL.teal,'#E8D9B0','#9CC2BD','#C9D6D3'],borderWidth:2,borderColor:'#fff'}]},
+    options:{maintainAspectRatio:false,cutout:'58%',plugins:{legend:{position:'right'}}}};
+}
+function stagedStack(){
+  const labels=['เต้านม','ปากมดลูก','ลำไส้','ตับ/ท่อน้ำดี','ปอด'];
+  const I=[34,30,22,9,11],II=[28,28,22,12,13],III=[24,26,30,28,30],IV=[14,16,26,51,46];
+  const ds=[['ระยะ I','#0E8C82',I],['ระยะ II','#7FC0B9',II],['ระยะ III','#E8C879',III],['ระยะ IV','#D85555',IV]]
+    .map(([l,c,d])=>({label:l,data:d,backgroundColor:c,borderRadius:3,maxBarThickness:40}));
+  return {type:'bar',data:{labels,datasets:ds},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+    scales:{x:{stacked:true,...gridCfg},y:{stacked:true,beginAtZero:true,max:100,...gridCfg}}}};
+}
+function cascade(labels,vals){
+  return {type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:[COL.teal,'#7FC0B9','#E0922F','#D85555'],borderRadius:6,maxBarThickness:54}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+'% ของผู้คัดกรอง'}}},
+    scales:{y:{type:'logarithmic',...gridCfg},x:gridCfg}}};
+}
+function histWait(){
+  const labels=['0–2','2–4','4–6','6–8','8–10','>10'];
+  const data=[12,26,20,18,14,10];
+  const colors=data.map((_,i)=>i<3?COL.good:COL.bad);
+  return {type:'bar',data:{labels,datasets:[{label:'สัปดาห์ที่รอ',data,backgroundColor:colors,borderRadius:5,maxBarThickness:38}]},
+    options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,title:{display:true,text:'% ผู้ป่วย'},...gridCfg},x:{title:{display:true,text:'สัปดาห์'},...gridCfg}}}};
+}
+function dualTrend(){
+  const labels=['2563','2564','2565','2566','2567'];
+  return {type:'line',data:{labels,datasets:[
+    {label:'อุบัติการณ์ ASR',data:[142,145,147,149,150],borderColor:COL.teal,borderWidth:2.5,tension:.3,pointRadius:3,fill:false},
+    {label:'อัตราตาย ASR',data:[101,99,98,96,95],borderColor:COL.bad,borderWidth:2.5,tension:.3,pointRadius:3,fill:false}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:false,...gridCfg},x:gridCfg}}};
+}
+function funnel(centerMIR){
+  // 13 regions: random-ish volume & MIR around center
+  const pts=[]; const seed=[820,640,910,1180,760,540,1320,990,700,880,1050,610,930];
+  const dev=[-.06,.04,.02,-.10,.12,.07,-.04,.01,.09,-.02,.05,-.08,.03];
+  for(let i=0;i<13;i++){pts.push({x:seed[i], y:Math.max(0.05,Math.min(.97, centerMIR+dev[i])), z:i+1});}
+  // control limits 95% & 99.8% as fn of n
+  const xs=[400,600,800,1000,1200,1400];
+  const limit=(z)=>xs.map(n=>({x:n, y:centerMIR + z*Math.sqrt(centerMIR*(1-centerMIR)/n)}));
+  const limitL=(z)=>xs.map(n=>({x:n, y:centerMIR - z*Math.sqrt(centerMIR*(1-centerMIR)/n)}));
+  const mk=(d,c,dash)=>({type:'line',data:d,borderColor:c,borderDash:dash,borderWidth:1.4,pointRadius:0,fill:false,tension:.2,order:2});
+  return {type:'scatter',data:{datasets:[
+    {label:'เขตสุขภาพ',data:pts,backgroundColor:pts.map(p=>{
+        const ul=centerMIR+3.09*Math.sqrt(centerMIR*(1-centerMIR)/p.x);
+        const ll=centerMIR-3.09*Math.sqrt(centerMIR*(1-centerMIR)/p.x);
+        return (p.y>ul||p.y<ll)?COL.bad:COL.teal;}),
+      pointRadius:6,pointHoverRadius:8,order:1},
+    mk(limit(1.96),'#B9C7C4',[4,4]), mk(limitL(1.96),'#B9C7C4',[4,4]),
+    mk(limit(3.09),COL.amber,[2,3]), mk(limitL(3.09),COL.amber,[2,3]),
+    {type:'line',data:xs.map(n=>({x:n,y:centerMIR})),borderColor:COL.muted,borderWidth:1.2,pointRadius:0,fill:false,order:2}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:c=>c.raw.z?('เขต '+c.raw.z+' · MIR '+c.raw.y.toFixed(2)+' · n='+c.raw.x):''}}},
+    scales:{x:{title:{display:true,text:'จำนวนผู้ป่วยรายใหม่/ปี'},...gridCfg},
+            y:{title:{display:true,text:'MIR'},min:0,max:1,...gridCfg}}}};
+}
+function groupedEquity(){
+  const labels=['เต้านม','ปากมดลูก','ลำไส้','ตับ/ท่อน้ำดี','ปอด'];
+  return {type:'bar',data:{labels,datasets:[
+    {label:'เขตเมือง',data:[88,71,60,18,16],backgroundColor:COL.teal,borderRadius:5,maxBarThickness:24},
+    {label:'เขตชนบท',data:[80,58,49,12,10],backgroundColor:COL.amber,borderRadius:5,maxBarThickness:24}
+  ]},options:{maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:{y:{beginAtZero:true,...gridCfg},x:gridCfg}}};
+}
+
+/* ---------- heat strip ---------- */
+function heatColor(score){ // 0-100
+  if(score>=85) return '#0E8C82';
+  if(score>=70) return '#5FB3A9';
+  if(score>=55) return '#A9D9C9';
+  if(score>=40) return '#F3E0A6';
+  return '#F6C9C0';
+}
+function renderHeat(base){
+  const wrap=document.getElementById('heat'); wrap.innerHTML='';
+  // deterministic spread around base
+  const dev=[8,-5,11,-12,4,-3,14,2,-7,6,-10,1,-2];
+  for(let i=0;i<13;i++){
+    const sc=Math.max(8,Math.min(99,Math.round(base+dev[i])));
+    const cell=document.createElement('button');
+    cell.className='hcell'+(state.region===i+1?' sel':'');
+    cell.style.background=heatColor(sc);
+    cell.innerHTML=`<div class="z">เขต ${i+1}</div><div class="v">${sc}</div>`;
+    cell.setAttribute('aria-label',`เขตสุขภาพที่ ${i+1} ค่า ${sc}`);
+    cell.onclick=()=>{ state.region = (state.region===i+1?null:i+1); syncLevelSelect(); render(); };
+    wrap.appendChild(cell);
+  }
+}
+
+/* ---------- state & render ---------- */
+const state={stage:'prevent', cancer:'all', region:null};
+
+function renderSpine(){
+  const s=document.getElementById('spine'); s.innerHTML='';
+  STAGES.forEach(st=>{
+    const b=document.createElement('button');
+    b.className='stage'; b.setAttribute('role','tab');
+    b.setAttribute('aria-selected', st.id===state.stage);
+    // pip status: derived headline
+    const pipColor = pipFor(st.id);
+    b.innerHTML=`<span class="pip" style="background:${pipColor}"></span>
+      <span class="no">${st.no}</span>
+      <span class="nm">${st.nm}</span><span class="en">${st.en}</span>`;
+    b.onclick=()=>{ state.stage=st.id; render(); };
+    s.appendChild(b);
+  });
+}
+function pipFor(id){
+  const d=buildStage(id,state.cancer);
+  const k=d.kpis[0];
+  const s=stat(k.val,k.target,k.invert); return s==='good'?COL.good:s==='watch'?COL.watch:COL.bad;
+}
+
+function render(){
+  renderSpine();
+  const d=buildStage(state.stage, state.cancer);
+  const st=STAGES.find(s=>s.id===state.stage);
+  const scope = state.region? `เขตสุขภาพที่ ${state.region}` : 'ระดับประเทศ';
+  document.getElementById('st-title').textContent = st.nm;
+  document.getElementById('st-desc').textContent = `${scope} · ${st.desc}`;
+
+  // KPIs
+  const kw=document.getElementById('kpis'); kw.innerHTML='';
+  d.kpis.forEach(k=>{
+    const s=stat(k.val,k.target,k.invert);
+    const c=s==='good'?COL.good:s==='watch'?COL.watch:COL.bad;
+    const val = k.dec? k.val.toFixed(k.dec): k.val;
+    const tgt = k.dec? k.target.toFixed(k.dec): k.target;
+    const el=document.createElement('div'); el.className='kpi';
+    el.innerHTML=`<div class="bar" style="background:${c}"></div>
+      <div class="lab">${k.lab}</div>
+      <div class="val">${val}<small>${k.unit}</small></div>
+      <div class="tgt">เป้า ${tgt}${k.unit}
+        <span class="badge b-${s}">${STATLAB[s]}</span></div>`;
+    kw.appendChild(el);
+  });
+
+  // charts
+  document.getElementById('cA-title').textContent=d.A.title;
+  document.getElementById('cA-cap').textContent=d.A.cap;
+  document.getElementById('cB-title').textContent=d.B.title;
+  document.getElementById('cB-cap').textContent=d.B.cap;
+  document.getElementById('cC-title').textContent=d.C.title;
+  document.getElementById('cC-cap').textContent=d.C.cap;
+
+  document.getElementById('hs-cap').textContent = `ตัวชี้วัด: ${d.heat} · คลิกเขตเพื่อเลือก`;
+
+  destroyCharts();
+  charts.A=new Chart(document.getElementById('chartA'), d.A.fn(state.cancer));
+  charts.B=new Chart(document.getElementById('chartB'), d.B.fn(state.cancer));
+  charts.C=new Chart(document.getElementById('chartC'), d.C.fn(state.cancer));
+  renderHeat(d.heatBase);
+}
+
+/* ---------- filters ---------- */
+function initFilters(){
+  const lvl=document.getElementById('f-level');
+  lvl.innerHTML='<option value="">ประเทศ (ภาพรวม)</option>'+
+    Array.from({length:13},(_,i)=>`<option value="${i+1}">เขตสุขภาพที่ ${i+1}</option>`).join('');
+  lvl.onchange=e=>{ state.region = e.target.value? +e.target.value: null; render(); };
+
+  const can=document.getElementById('f-cancer');
+  can.innerHTML=Object.entries(CANCERS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  can.onchange=e=>{ state.cancer=e.target.value; render(); };
+}
+function syncLevelSelect(){ document.getElementById('f-level').value = state.region? state.region:''; }
+
+initFilters();
+render();
+</script>
+</body>
+</html>
