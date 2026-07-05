@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sankey – FIT to Colonoscopy Result (Thailand)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+<style>
+  :root{ --bg:#faf9f5; --card:#ffffff; --text:#2c2c2a; --muted:#5f5e5a; --border:#e5e3da; --accent:#185fa5; }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text);
+    font-family:"Segoe UI",-apple-system,"Helvetica Neue",Arial,sans-serif; padding:32px 20px; }
+  .wrap{max-width:980px;margin:0 auto;}
+  h1{font-size:22px;font-weight:600;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px;}
+  .controls{display:flex;align-items:center;gap:18px;margin-bottom:16px;font-size:14px;flex-wrap:wrap;}
+  .controls .grp{display:flex;align-items:center;gap:8px;}
+  select{font-size:14px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);cursor:pointer;}
+  .card{ background:var(--card);border:1px solid var(--border);border-radius:12px; padding:20px;overflow-x:auto; }
+  svg{display:block;font-family:inherit;}
+  .node rect{cursor:pointer;stroke:#00000018;}
+  .node .name{fill:var(--text);}
+  .node .val{fill:var(--muted);}
+  .link{fill:none;transition:opacity .15s;}
+  .link:hover{opacity:.9 !important;}
+  .leader{stroke:var(--border);stroke-width:1;fill:none;}
+  .waitbar{margin-top:8px;padding:14px 18px;background:#f1f5fa;border:1px solid #d9e5f2;border-radius:10px;
+    text-align:center;}
+  .waitbar .big{font-size:26px;font-weight:600;color:var(--accent);}
+  .waitbar .lab{font-size:13px;color:var(--muted);}
+  .footnote{color:var(--muted);font-size:12px;margin-top:14px;line-height:1.6;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:12px;color:var(--muted);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .tooltip{ position:fixed;pointer-events:none;background:#2c2c2a;color:#fff;
+    padding:6px 10px;border-radius:6px;font-size:12px;opacity:0;transition:opacity .1s;white-space:nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Colorectal cancer screening pathway — Thailand</h1>
+  <p class="sub">FIT result → FIT positive → Colonoscopy → Colonoscopy result · band width is proportional to number of cases</p>
+  <div class="controls">
+    <div class="grp"><label for="year">Fiscal year:</label>
+      <select id="year"></select></div>
+    <div class="grp"><label for="region">Health region:</label>
+      <select id="region"></select></div>
+  </div>
+  <div class="card">
+    <svg id="chart"></svg>
+    <div class="waitbar">
+      <span class="big" id="wmed">–</span>
+      <span class="lab">median wait time (days) to colonoscopy</span>
+    </div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#B5D4F4"></i>FIT tested</span>
+      <span><i class="swatch" style="background:#EF9F27"></i>FIT positive / colonoscopy</span>
+      <span><i class="swatch" style="background:#888780"></i>Negative / unknown / not done</span>
+      <span><i class="swatch" style="background:#639922"></i>Normal</span>
+      <span><i class="swatch" style="background:#7F77DD"></i>Polyp</span>
+      <span><i class="swatch" style="background:#1D9E75"></i>Non polyp</span>
+      <span><i class="swatch" style="background:#E24B4A"></i>Cancer</span>
+    </div>
+  </div>
+</div>
+<div class="tooltip" id="tip"></div>
+
+<script>
+const ALL = {"67": {"1": {"fit_pos": 11262, "fit_neg": 86281, "fit_unk": 18987, "done": 5951, "notdone": 5311, "normal": 3162, "polyp": 2247, "nonpolyp": 406, "cancer": 136, "wmed": 84.0}, "2": {"fit_pos": 6580, "fit_neg": 62559, "fit_unk": 4341, "done": 3029, "notdone": 3551, "normal": 2009, "polyp": 805, "nonpolyp": 149, "cancer": 66, "wmed": 121.0}, "3": {"fit_pos": 5558, "fit_neg": 60311, "fit_unk": 3936, "done": 3193, "notdone": 2365, "normal": 1840, "polyp": 1103, "nonpolyp": 183, "cancer": 67, "wmed": 83.0}, "4": {"fit_pos": 5423, "fit_neg": 80786, "fit_unk": 9102, "done": 1878, "notdone": 3545, "normal": 1141, "polyp": 596, "nonpolyp": 74, "cancer": 67, "wmed": 77.0}, "5": {"fit_pos": 5927, "fit_neg": 116824, "fit_unk": 11489, "done": 2524, "notdone": 3403, "normal": 1589, "polyp": 794, "nonpolyp": 66, "cancer": 75, "wmed": 82.0}, "6": {"fit_pos": 6680, "fit_neg": 93335, "fit_unk": 8828, "done": 2945, "notdone": 3735, "normal": 2106, "polyp": 670, "nonpolyp": 81, "cancer": 88, "wmed": 79.0}, "7": {"fit_pos": 10975, "fit_neg": 120925, "fit_unk": 13309, "done": 5576, "notdone": 5399, "normal": 3994, "polyp": 1323, "nonpolyp": 181, "cancer": 78, "wmed": 79.0}, "8": {"fit_pos": 9626, "fit_neg": 112319, "fit_unk": 13930, "done": 3835, "notdone": 5791, "normal": 2566, "polyp": 1040, "nonpolyp": 156, "cancer": 73, "wmed": 96.0}, "9": {"fit_pos": 14989, "fit_neg": 137291, "fit_unk": 15954, "done": 5395, "notdone": 9594, "normal": 3623, "polyp": 1484, "nonpolyp": 147, "cancer": 141, "wmed": 105.0}, "10": {"fit_pos": 13567, "fit_neg": 130595, "fit_unk": 10490, "done": 5851, "notdone": 7716, "normal": 4214, "polyp": 1252, "nonpolyp": 313, "cancer": 72, "wmed": 117.0}, "11": {"fit_pos": 6325, "fit_neg": 80195, "fit_unk": 4024, "done": 3181, "notdone": 3144, "normal": 2104, "polyp": 923, "nonpolyp": 79, "cancer": 75, "wmed": 73.0}, "12": {"fit_pos": 5591, "fit_neg": 102066, "fit_unk": 15478, "done": 2257, "notdone": 3334, "normal": 1379, "polyp": 749, "nonpolyp": 88, "cancer": 41, "wmed": 84.0}, "13": {"fit_pos": 3819, "fit_neg": 42410, "fit_unk": 2164, "done": 586, "notdone": 3233, "normal": 339, "polyp": 208, "nonpolyp": 14, "cancer": 25, "wmed": 91.5}, "Thailand": {"fit_pos": 106322, "fit_neg": 1225897, "fit_unk": 132032, "done": 46201, "notdone": 60121, "normal": 30066, "polyp": 13194, "nonpolyp": 1937, "cancer": 1004, "wmed": 89.0}}, "68": {"1": {"fit_pos": 9601, "fit_neg": 95853, "fit_unk": 28881, "done": 3667, "notdone": 5934, "normal": 1905, "polyp": 1480, "nonpolyp": 219, "cancer": 63, "wmed": 64.0}, "2": {"fit_pos": 5076, "fit_neg": 64321, "fit_unk": 3616, "done": 2000, "notdone": 3076, "normal": 1285, "polyp": 579, "nonpolyp": 91, "cancer": 45, "wmed": 105.0}, "3": {"fit_pos": 4922, "fit_neg": 63357, "fit_unk": 4832, "done": 2491, "notdone": 2431, "normal": 1445, "polyp": 856, "nonpolyp": 157, "cancer": 33, "wmed": 68.0}, "4": {"fit_pos": 5799, "fit_neg": 88952, "fit_unk": 6413, "done": 1628, "notdone": 4171, "normal": 1001, "polyp": 536, "nonpolyp": 48, "cancer": 43, "wmed": 61.0}, "5": {"fit_pos": 5010, "fit_neg": 102598, "fit_unk": 8253, "done": 1693, "notdone": 3317, "normal": 1050, "polyp": 557, "nonpolyp": 49, "cancer": 37, "wmed": 68.0}, "6": {"fit_pos": 5806, "fit_neg": 86124, "fit_unk": 6525, "done": 2086, "notdone": 3720, "normal": 1460, "polyp": 530, "nonpolyp": 45, "cancer": 51, "wmed": 75.0}, "7": {"fit_pos": 9878, "fit_neg": 103697, "fit_unk": 20198, "done": 4458, "notdone": 5420, "normal": 3119, "polyp": 1114, "nonpolyp": 164, "cancer": 61, "wmed": 68.0}, "8": {"fit_pos": 9329, "fit_neg": 117081, "fit_unk": 16241, "done": 3227, "notdone": 6102, "normal": 2270, "polyp": 748, "nonpolyp": 167, "cancer": 42, "wmed": 98.0}, "9": {"fit_pos": 9444, "fit_neg": 106997, "fit_unk": 10289, "done": 4087, "notdone": 5357, "normal": 2801, "polyp": 1118, "nonpolyp": 107, "cancer": 61, "wmed": 61.0}, "10": {"fit_pos": 9906, "fit_neg": 105365, "fit_unk": 6631, "done": 3626, "notdone": 6280, "normal": 2644, "polyp": 788, "nonpolyp": 153, "cancer": 41, "wmed": 73.5}, "11": {"fit_pos": 5992, "fit_neg": 83197, "fit_unk": 6409, "done": 2623, "notdone": 3369, "normal": 1658, "polyp": 839, "nonpolyp": 89, "cancer": 37, "wmed": 63.0}, "12": {"fit_pos": 4551, "fit_neg": 91886, "fit_unk": 20364, "done": 1630, "notdone": 2921, "normal": 946, "polyp": 613, "nonpolyp": 52, "cancer": 19, "wmed": 51.0}, "13": {"fit_pos": 4232, "fit_neg": 48208, "fit_unk": 2296, "done": 309, "notdone": 3923, "normal": 195, "polyp": 85, "nonpolyp": 13, "cancer": 16, "wmed": 61.0}, "Thailand": {"fit_pos": 89546, "fit_neg": 1157636, "fit_unk": 140948, "done": 33525, "notdone": 56021, "normal": 21779, "polyp": 9843, "nonpolyp": 1354, "cancer": 549, "wmed": 70.0}}};
+const yearLabel = {"66":"FY2566 (2023)","67":"FY2567 (2024)","68":"FY2568 (2025)"};
+const ys=document.getElementById("year");
+["68","67"].forEach(y=>{const o=document.createElement("option");o.value=y;o.textContent=yearLabel[y];ys.appendChild(o);});
+const regions=[...Array(13)].map((_,i)=>String(i+1)).concat("Thailand");
+const rs=document.getElementById("region");
+regions.forEach(r=>{const o=document.createElement("option");o.value=r;o.textContent=r==="Thailand"?"Thailand (national)":("Region "+r);rs.appendChild(o);});
+ys.value="68"; rs.value="Thailand";
+
+const W=940,H=560,M={top:24,right:180,bottom:24,left:140};
+const svg=d3.select("#chart").attr("viewBox",`0 0 ${W} ${H}`).attr("width","100%");
+const tip=d3.select("#tip"); const fmt=d3.format(",");
+
+function build(){
+  const d=ALL[ys.value][rs.value];
+  document.getElementById("wmed").textContent=d.wmed;
+  const negD=Math.round(d.fit_neg*0.05),unkD=Math.round(d.fit_unk*0.25);
+  const data={nodes:[
+      {id:"FIT tested",color:"#B5D4F4"},{id:"FIT positive",color:"#EF9F27"},
+      {id:"FIT negative",color:"#888780"},{id:"FIT unknown",color:"#888780"},
+      {id:"Colonoscopy done",color:"#EF9F27"},{id:"Not done",color:"#888780"},
+      {id:"Normal",color:"#639922"},{id:"Polyp",color:"#7F77DD"},
+      {id:"Non polyp",color:"#1D9E75"},{id:"Cancer",color:"#E24B4A"}],
+    links:[
+      {s:"FIT tested",t:"FIT positive",v:d.fit_pos},
+      {s:"FIT tested",t:"FIT negative",v:d.fit_neg,disp:negD},
+      {s:"FIT tested",t:"FIT unknown",v:d.fit_unk,disp:unkD},
+      {s:"FIT positive",t:"Colonoscopy done",v:d.done},
+      {s:"FIT positive",t:"Not done",v:d.notdone},
+      {s:"Colonoscopy done",t:"Normal",v:d.normal,disp:d.normal*2},
+      {s:"Colonoscopy done",t:"Polyp",v:d.polyp,disp:d.polyp*2},
+      {s:"Colonoscopy done",t:"Non polyp",v:d.nonpolyp,disp:d.nonpolyp*2},
+      {s:"Colonoscopy done",t:"Cancer",v:d.cancer,disp:d.cancer*2}]};
+  const idx=new Map(data.nodes.map((n,i)=>[n.id,i]));
+  const graph={nodes:data.nodes.map(n=>({...n})),
+    links:data.links.map(l=>({source:idx.get(l.s),target:idx.get(l.t),value:l.disp||l.v,real:l.v,compressed:!!l.disp}))};
+  const sankey=d3.sankey().nodeWidth(22).nodePadding(20).extent([[M.left,M.top],[W-M.right,H-M.bottom]]);
+  const {nodes,links}=sankey(graph);
+  nodes.forEach(n=>{const inS=n.targetLinks.reduce((a,l)=>a+l.real,0),outS=n.sourceLinks.reduce((a,l)=>a+l.real,0);n.realValue=Math.max(inS,outS);});
+  nodes.forEach(n=>{if(n.targetLinks.length===1){n.pct=n.realValue/n.targetLinks[0].source.realValue*100;}});
+  svg.selectAll("*").remove();
+  svg.append("g").selectAll("path").data(links).join("path")
+    .attr("class","link").attr("d",d3.sankeyLinkHorizontal())
+    .attr("stroke",l=>l.target.color).attr("stroke-opacity",.30).attr("stroke-width",l=>Math.max(1,l.width))
+    .on("mousemove",(e,l)=>{tip.style("opacity",1).style("left",(e.clientX+12)+"px").style("top",(e.clientY+12)+"px")
+      .html(`${l.source.id} &rarr; ${l.target.id}<br>${fmt(l.real)} cases${l.compressed?' (compressed band)':''}`);})
+    .on("mouseleave",()=>tip.style("opacity",0));
+  const labels=nodes.map(n=>{const left=n.x0<W/2;return{d:n,isLeft:left,x:left?n.x1+10:n.x0-10,cy:(n.y0+n.y1)/2,y:(n.y0+n.y1)/2,right:!left};});
+  const LH=30;
+  const rl=labels.filter(l=>l.right).sort((a,b)=>a.cy-b.cy);
+  for(let i=1;i<rl.length;i++){if(rl[i].y-rl[i-1].y<LH)rl[i].y=rl[i-1].y+LH;}
+  const g=svg.append("g");
+  labels.filter(l=>l.right).forEach(l=>{if(Math.abs(l.y-l.cy)>2){
+    g.append("path").attr("class","leader").attr("d",`M${l.d.x1},${l.cy} C${l.d.x1+6},${l.cy} ${l.x-4},${l.y} ${l.x},${l.y}`);}});
+  const node=svg.append("g").selectAll("g").data(nodes).join("g").attr("class","node");
+  node.append("rect").attr("x",n=>n.x0).attr("y",n=>n.y0).attr("width",n=>n.x1-n.x0)
+    .attr("height",n=>Math.max(2,n.y1-n.y0)).attr("fill",n=>n.color).attr("rx",3)
+    .on("mousemove",(e,n)=>{tip.style("opacity",1).style("left",(e.clientX+12)+"px").style("top",(e.clientY+12)+"px")
+      .html(`${n.id}<br>${fmt(n.realValue)} cases${n.pct!=null?' ('+n.pct.toFixed(1)+'%)':''}`);})
+    .on("mouseleave",()=>tip.style("opacity",0));
+  const lg=g.selectAll("g.lbl").data(labels).join("g");
+  lg.append("text").attr("class","name").attr("font-size","13").attr("x",l=>l.x).attr("y",l=>l.y-5)
+    .attr("text-anchor",l=>l.isLeft?"start":"end").text(l=>l.d.id);
+  lg.append("text").attr("class","val").attr("font-size","11.5").attr("x",l=>l.x).attr("y",l=>l.y+8)
+    .attr("text-anchor",l=>l.isLeft?"start":"end")
+    .text(l=>fmt(l.d.realValue)+" cases"+(l.d.pct!=null?" ("+l.d.pct.toFixed(1)+"%)":""));
+}
+ys.addEventListener("change",build);
+rs.addEventListener("change",build);
+build();
+</script>
+</body>
+</html>
