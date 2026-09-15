@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TCB — medical records and coding assistant (mockup)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#212529; --ink-2:#5a6169; --ink-3:#868e96;
+  --line:#ced4da; --line-soft:#e3e6e9; --bg:#f4f6f8; --card:#ffffff;
+  --label:#c2185b; --value:#2e7d32; --req:#d32f2f;
+  --accent:#1565c0; --accent-bg:#e7f0fa;
+  --ok:#2e7d32; --ok-bg:#e8f5e9;
+  --warn:#b26a00; --warn-bg:#fff4e0;
+  --bad:#c62828; --bad-bg:#fdecec;
+  --hl:#fff3a3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 64px}
+h1{font-size:20px;font-weight:500;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line-soft);border-radius:4px;padding:16px 18px;margin-bottom:14px}
+.legend{color:var(--label);font-size:15px;font-weight:500;margin:0 0 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{font-size:11px;font-weight:400;padding:2px 8px;border-radius:10px;background:var(--accent-bg);color:var(--accent)}
+.grid{display:grid;gap:12px 18px}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fld label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:3px}
+.fld label b{font-weight:500;color:var(--ink)}
+.req{color:var(--req)}
+.box{border:1px solid var(--line);border-radius:3px;padding:7px 10px;background:#fff;min-height:38px;font-size:14px;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .3s,border-color .3s}
+.box.empty{color:var(--ink-3)}
+.box.filled{border-color:var(--ok);background:var(--ok-bg)}
+.box .mark{font-size:11px;color:var(--ok);white-space:nowrap}
+button{font-family:inherit;font-size:13.5px;border-radius:3px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:7px 14px;cursor:pointer}
+button:hover{background:#f1f3f5}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button:disabled{opacity:.45;cursor:default}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:#0f4d94}
+.btn-sm{font-size:12.5px;padding:3px 10px}
+select,input[type=text]{font-family:inherit;font-size:13.5px;padding:7px 8px;border:1px solid var(--line);border-radius:3px;width:100%;background:#fff;color:var(--ink)}
+.toolbar{display:grid;grid-template-columns:1.1fr 1fr 1fr auto;gap:10px;align-items:end}
+.toolbar label{display:block;font-size:12.5px;color:var(--ink-2);margin-bottom:3px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:14px;align-items:start}
+.docrow{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line-soft);border-radius:3px;margin-bottom:6px;cursor:pointer;background:#fff}
+.docrow:hover{background:#f8f9fa}
+.docrow.active{border-color:var(--accent);background:var(--accent-bg)}
+.docrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.docrow .dt{font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.tag{font-size:11px;padding:1px 7px;border-radius:10px;white-space:nowrap}
+.tag.pdf{background:var(--warn-bg);color:var(--warn)}
+.tag.txt{background:var(--ok-bg);color:var(--ok)}
+.viewer{border:1px solid var(--line-soft);border-radius:3px;background:#fff}
+.viewer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-2)}
+.viewer-body{padding:12px 14px;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12.5px;line-height:2;max-height:320px;overflow:auto;white-space:pre-wrap}
+.ev{background:var(--hl);border-radius:2px;padding:1px 2px}
+.ev.flash{outline:2px solid var(--accent);outline-offset:1px}
+.sug{border:1px solid var(--line-soft);border-radius:3px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.sug.abstain{border-color:#f0d9a8;background:var(--warn-bg)}
+.sug.done{border-color:#bfe0c2;background:var(--ok-bg)}
+.sug-top{display:flex;align-items:baseline;gap:10px}
+.sug-fld{font-size:12px;color:var(--ink-2);min-width:118px}
+.sug-code{flex:1;font-size:14px;min-width:0}
+.score{font-size:12.5px;font-weight:500;white-space:nowrap}
+.bar{height:4px;border-radius:2px;background:#eceff1;margin:7px 0 8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:2px}
+.sug-foot{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cite{font-size:11.5px;color:var(--ink-3);cursor:pointer;text-decoration:underline dotted;background:none;border:none;padding:0;font-family:inherit}
+.cite:hover{color:var(--accent)}
+.spacer{flex:1}
+.alts{margin-top:9px;padding-top:9px;border-top:1px dashed var(--line-soft);display:none}
+.alts.open{display:block}
+.alt{display:flex;align-items:center;gap:10px;padding:4px 0;font-size:13px}
+.alt .sc{color:var(--ink-3);font-size:12px;width:34px;text-align:right}
+.banner{border:1px solid #f0b4b4;background:var(--bad-bg);color:var(--bad);border-radius:3px;padding:10px 12px;margin-bottom:10px;font-size:13px;line-height:1.7}
+.banner b{font-weight:500}
+.status{font-size:12.5px;color:var(--ink-3);margin:10px 0 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.empty-state{border:1px dashed var(--line);border-radius:3px;padding:26px 16px;text-align:center;color:var(--ink-3);font-size:13.5px}
+table.audit{width:100%;border-collapse:collapse;font-size:12.5px}
+table.audit th{text-align:left;font-weight:500;color:var(--ink-2);border-bottom:1px solid var(--line-soft);padding:6px 8px}
+table.audit td{border-bottom:1px solid var(--line-soft);padding:6px 8px;vertical-align:top}
+table.audit td.w{color:var(--ink-3)}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}.ev.flash{outline-width:3px}}
+@media (max-width:900px){.g3,.split,.toolbar{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Add cancer case — coding assistant mockup</h1>
+
+<div class="card">
+  <p class="legend">Cancer data <span class="pill">Existing form, relevant fields only</span></p>
+  <div class="grid g3">
+    <div class="fld"><label><b>31.</b> Date of biopsy</label><div class="box empty" id="f31"><span>__/__/____</span><span class="mark"></span></div></div>
+    <div class="fld"><label><b>33.</b> Topography <span class="req">*</span></label><div class="box" id="f33"><span>C44.0 Skin of lip, NOS</span><span class="mark"></span></div></div>
+    <div class="fld"><label><b>36.</b> Morphology</label><div class="box" id="f36"><span>8090 Basal cell tumor</span><span class="mark"></span></div></div>
+    <div class="fld"><label><b>37.</b> Behaviour</label><div class="box" id="f37"><span>3 Malignant</span><span class="mark"></span></div></div>
+    <div class="fld"><label><b>38.</b> Grade</label><div class="box" id="f38"><span>9 Not stated or not applicable</span><span class="mark"></span></div></div>
+    <div class="fld"><label><b>43.</b> ICD-10 <span class="req">*</span></label><div class="box" id="f43"><span>C44.0 : Skin of lip malignant neoplasm</span><span class="mark"></span></div></div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="legend">45. Medical records and coding assistant <span class="pill">New section</span></p>
+
+  <div class="toolbar">
+    <div>
+      <label for="src">Source</label>
+      <select id="src">
+        <option>Hospital HIS (HL7 / FHIR)</option>
+        <option>Pathology LIS</option>
+        <option>e-Claim / NHSO</option>
+      </select>
+    </div>
+    <div>
+      <label for="hn">HN</label>
+      <input type="text" id="hn" value="•••••••" readonly>
+    </div>
+    <div>
+      <label for="rng">Date range</label>
+      <select id="rng">
+        <option>All records for this HN</option>
+        <option>Last 12 months</option>
+        <option>Custom</option>
+      </select>
+    </div>
+    <button class="btn-primary" id="btn-fetch">Fetch records</button>
+  </div>
+
+  <p class="status" id="fetch-status"></p>
+
+  <div class="split" style="margin-top:14px">
+    <div>
+      <div id="doclist"><div class="empty-state">No records loaded yet.<br>Select a source and fetch to begin.</div></div>
+      <div style="margin-top:10px">
+        <button id="btn-analyze" disabled>Suggest codes</button>
+      </div>
+    </div>
+
+    <div class="viewer" id="viewer" hidden>
+      <div class="viewer-head"><span id="v-title"></span><span id="v-meta"></span></div>
+      <div class="viewer-body" id="v-body"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card" id="sug-card" hidden>
+  <p class="legend">Suggested codes — review before accepting <span class="pill">nci-coder v2.3 · embed</span></p>
+  <div id="conflicts"></div>
+  <div id="suglist"></div>
+  <div class="status">
+    <button class="btn-sm" id="btn-bulk">Accept all at 0.90 and above</button>
+    <button class="btn-sm" id="btn-reset">Start over</button>
+    <span class="spacer"></span>
+    <span id="progress"></span>
+  </div>
+</div>
+
+<div class="card" id="audit-card" hidden>
+  <p class="legend">Audit log <span class="pill">Posted to /coding/feedback</span></p>
+  <table class="audit">
+    <thead><tr><th style="width:80px">Time</th><th style="width:120px">Field</th><th>Suggested</th><th>Registrar chose</th><th style="width:76px">Outcome</th></tr></thead>
+    <tbody id="audit-body"></tbody>
+  </table>
+</div>
+
+</div>
+
+<script>
+const DOCS = [
+  {id:"d1", name:"Pathology report SP-68-01423.pdf", date:"05/05/1992", kind:"pdf", meta:"Scanned PDF · OCR complete · 3 pages",
+   html:`Specimen received: 05 May 1992
+Specimen: <span class="ev" id="e-site">skin, lower lip</span>, wide local excision.
+
+Gross: skin ellipse 2.4 x 1.1 cm with central ulcerated nodule 0.9 cm.
+
+Microscopic: sections show nests of <span class="ev" id="e-morph">basaloid cells with peripheral palisading</span>
+and retraction artefact, arising from the epidermis and extending into
+the dermis. Features are those of <span class="ev" id="e-dx">basal cell carcinoma</span>, infiltrative type.
+Depth of invasion 3.1 mm. <span class="ev" id="e-beh">No lymphovascular invasion. Margins free.</span>
+
+Diagnosis: Basal cell carcinoma, skin of lower lip.
+Date of biopsy: <span class="ev" id="e-date">05/05/1992</span>`},
+  {id:"d2", name:"OPD note — surgery clinic", date:"01/05/1992", kind:"txt", meta:"Plain text from HIS",
+   html:`CC: non-healing sore on the lower lip for 8 months
+PE: ulcerated nodule 0.9 cm at the <span class="ev" id="e-site2">vermilion border of the lower lip</span>,
+    rolled edges, no palpable cervical nodes
+Plan: excisional biopsy`},
+  {id:"d3", name:"Operative note — wide excision", date:"12/05/1992", kind:"txt", meta:"Plain text from HIS",
+   html:`Procedure: wide local excision of lower lip lesion with 4 mm margin
+Findings: lesion confined to skin and subcutis, no bone involvement
+Closure: primary`}
+];
+
+const SUGS = [
+  {id:"s1", field:"31. Date of biopsy", target:"f31", code:"05/05/1992", score:0.86,
+   cite:"“Date of biopsy: 05/05/1992”", doc:"d1", ev:"e-date",
+   alts:[["01/05/1992 (first visit)",0.31],["12/05/1992 (surgery date)",0.22]]},
+  {id:"s2", field:"33. Topography", target:"f33", code:"C00.2 External lower lip", score:0.94,
+   cite:"“skin, lower lip” and “vermilion border”", doc:"d1", ev:"e-site", conflict:true,
+   alts:[["C44.0 Skin of lip, NOS",0.61],["C00.1 External upper lip",0.08]]},
+  {id:"s3", field:"36. Morphology", target:"f36", code:"8090/3 Basal cell carcinoma, NOS", score:0.91,
+   cite:"“basal cell carcinoma”", doc:"d1", ev:"e-dx",
+   alts:[["8092/3 Basal cell carcinoma, infiltrating",0.74],["8091/3 Multifocal superficial BCC",0.12]]},
+  {id:"s4", field:"37. Behaviour", target:"f37", code:"3 Malignant, primary site", score:0.97,
+   cite:"“carcinoma” plus margin and invasion wording", doc:"d1", ev:"e-beh",
+   alts:[["2 Carcinoma in situ",0.05]]},
+  {id:"s5", field:"38. Grade", target:"f38", code:"No supporting evidence found", score:0.22, abstain:true,
+   cite:"no differentiation stated anywhere in the record", doc:"d1", ev:"e-morph", alts:[]},
+  {id:"s6", field:"43. ICD-10", target:"f43", code:"C00.2 : Malignant neoplasm of external lower lip", score:0.88,
+   cite:"derived from topography in field 33", doc:"d1", ev:"e-site",
+   alts:[["C44.0 Skin of lip malignant neoplasm",0.55]]}
+];
+
+let activeDoc=null, accepted={}, started=false;
+const $=(s)=>document.querySelector(s);
+const now=()=>new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+const color=(s)=> s>=0.9?"var(--ok)": s>=0.6?"var(--warn)":"var(--bad)";
+
+function renderDocs(){
+  $("#doclist").innerHTML = DOCS.map(d=>`
+    <div class="docrow${d.id===activeDoc?" active":""}" data-doc="${d.id}" tabindex="0" role="button">
+      <span class="nm">${d.name}</span>
+      <span class="dt">${d.date}</span>
+      <span class="tag ${d.kind}">${d.kind==="pdf"?"OCR":"text"}</span>
+    </div>`).join("");
+  document.querySelectorAll(".docrow").forEach(r=>{
+    const open=()=>openDoc(r.dataset.doc);
+    r.onclick=open;
+    r.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open();}};
+  });
+}
+
+function openDoc(id, evId){
+  activeDoc=id;
+  const d=DOCS.find(x=>x.id===id);
+  $("#viewer").hidden=false;
+  $("#v-title").textContent=d.name;
+  $("#v-meta").textContent=d.meta;
+  $("#v-body").innerHTML=d.html;
+  renderDocs();
+  if(evId){
+    const el=document.getElementById(evId);
+    if(el){
+      el.classList.add("flash");
+      el.scrollIntoView({block:"center",behavior:"smooth"});
+      setTimeout(()=>el.classList.remove("flash"),1600);
+    }
+  }
+}
+
+function renderSugs(){
+  $("#suglist").innerHTML = SUGS.map(s=>{
+    const done=!!accepted[s.id];
+    const cls = done?"sug done" : s.abstain?"sug abstain":"sug";
+    const sc = `<span class="score" style="color:${s.abstain?"var(--warn)":color(s.score)}">${s.score.toFixed(2)}</span>`;
+    const bar = s.abstain?"":`<div class="bar"><i style="width:${Math.round(s.score*100)}%;background:${color(s.score)}"></i></div>`;
+    const actions = done
+      ? `<span style="font-size:12px;color:var(--ok)">Accepted</span>
+         <button class="btn-sm" data-undo="${s.id}">Undo</button>`
+      : s.abstain
+        ? `<span style="font-size:12px;color:var(--warn)">Left for the registrar — the model does not guess</span>`
+        : `<button class="btn-sm" data-accept="${s.id}">Accept</button>
+           ${s.alts.length?`<button class="btn-sm" data-alt="${s.id}">Other candidates (${s.alts.length})</button>`:""}`;
+    const alts = s.alts.length? `<div class="alts" id="alts-${s.id}">${
+      s.alts.map((a,i)=>`<div class="alt"><span class="sc">${a[1].toFixed(2)}</span>
+        <span style="flex:1">${a[0]}</span>
+        <button class="btn-sm" data-pick="${s.id}|${i}">Use this</button></div>`).join("")}</div>` : "";
+    return `<div class="${cls}">
+      <div class="sug-top">
+        <span class="sug-fld">${s.field}</span>
+        <span class="sug-code">${s.code}</span>${sc}
+      </div>${bar}
+      <div class="sug-foot">
+        <button class="cite" data-cite="${s.id}">Evidence: ${s.cite}</button>
+        <span class="spacer"></span>${actions}
+      </div>${alts}
+    </div>`;
+  }).join("");
+
+  document.querySelectorAll("[data-cite]").forEach(b=>b.onclick=()=>{
+    const s=SUGS.find(x=>x.id===b.dataset.cite); openDoc(s.doc,s.ev);
+  });
+  document.querySelectorAll("[data-accept]").forEach(b=>b.onclick=()=>accept(b.dataset.accept));
+  document.querySelectorAll("[data-undo]").forEach(b=>b.onclick=()=>undo(b.dataset.undo));
+  document.querySelectorAll("[data-alt]").forEach(b=>b.onclick=()=>{
+    $("#alts-"+b.dataset.alt).classList.toggle("open");
+  });
+  document.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{
+    const [id,i]=b.dataset.pick.split("|"); accept(id,SUGS.find(x=>x.id===id).alts[+i][0]);
+  });
+  updateProgress();
+  renderConflicts();
+}
+
+function renderConflicts(){
+  const c=SUGS.find(s=>s.conflict && !accepted[s.id]);
+  $("#conflicts").innerHTML = c ? `<div class="banner">
+    <b>Conflicts with the value already entered — field 33</b><br>
+    The form holds C44.0 Skin of lip, NOS, but the pathology report and OPD note both describe the
+    vermilion border of the lower lip, which ICD-O-3 codes as C00.2 rather than skin.
+    IARC check: both pairings are valid with 8090/3, so a registrar has to decide.
+  </div>`:"";
+}
+
+function setField(target, text){
+  const el=document.getElementById(target);
+  el.classList.remove("empty"); el.classList.add("filled");
+  el.querySelector("span").textContent=text;
+  el.querySelector(".mark").textContent="from AI";
+}
+function clearField(target, orig){
+  const el=document.getElementById(target);
+  el.classList.remove("filled");
+  if(orig==="__/__/____") el.classList.add("empty");
+  el.querySelector("span").textContent=orig;
+  el.querySelector(".mark").textContent="";
+}
+
+const ORIG={};
+document.querySelectorAll(".box").forEach(b=>ORIG[b.id]=b.querySelector("span").textContent);
+
+function accept(id, chosen){
+  const s=SUGS.find(x=>x.id===id);
+  const val=chosen||s.code;
+  accepted[id]=val;
+  setField(s.target,val);
+  logAudit(s,val,chosen?"Edited":"Accepted");
+  renderSugs();
+}
+function undo(id){
+  const s=SUGS.find(x=>x.id===id);
+  delete accepted[id];
+  clearField(s.target,ORIG[s.target]);
+  renderSugs();
+}
+function logAudit(s,val,result){
+  $("#audit-card").hidden=false;
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td class="w">${now()}</td><td>${s.field}</td><td class="w">${s.code}</td>
+    <td>${val}</td><td style="color:${result==="Accepted"?"var(--ok)":"var(--warn)"}">${result}</td>`;
+  $("#audit-body").prepend(tr);
+}
+function updateProgress(){
+  const n=Object.keys(accepted).length, total=SUGS.filter(s=>!s.abstain).length;
+  $("#progress").textContent=`${n} of ${total} fields accepted · every action is written to the audit log`;
+}
+
+$("#btn-fetch").onclick=()=>{
+  $("#fetch-status").innerHTML=`<span class="spin"></span> Calling GET /records?hn=••••••• …`;
+  $("#btn-fetch").disabled=true;
+  setTimeout(()=>{
+    renderDocs(); openDoc("d1");
+    $("#fetch-status").innerHTML=`3 documents found · 1 PDF passed through OCR (Thai and English) · 1.9 s`;
+    $("#btn-analyze").disabled=false; $("#btn-fetch").disabled=false;
+  },900);
+};
+
+$("#btn-analyze").onclick=()=>{
+  if(started){ $("#sug-card").hidden=false; return; }
+  $("#btn-analyze").disabled=true;
+  $("#btn-analyze").innerHTML=`<span class="spin"></span> Reading records …`;
+  setTimeout(()=>{
+    started=true;
+    $("#btn-analyze").textContent="Suggest codes again";
+    $("#btn-analyze").disabled=false;
+    $("#sug-card").hidden=false;
+    renderSugs();
+    $("#sug-card").scrollIntoView({behavior:"smooth",block:"start"});
+  },1300);
+};
+
+$("#btn-bulk").onclick=()=>{
+  SUGS.filter(s=>!s.abstain && !s.conflict && s.score>=0.9 && !accepted[s.id]).forEach(s=>accept(s.id));
+};
+
+$("#btn-reset").onclick=()=>{
+  Object.keys(accepted).forEach(id=>{
+    const s=SUGS.find(x=>x.id===id); clearField(s.target,ORIG[s.target]);
+  });
+  accepted={}; $("#audit-body").innerHTML=""; $("#audit-card").hidden=true;
+  renderSugs();
+};
+</script>
+</body>
+</html>
