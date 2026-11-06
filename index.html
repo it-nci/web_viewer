@@ -7,63 +7,60 @@
     <style>
         body { font-family: sans-serif; text-align: center; padding: 50px; background-color: #f4f4f9; }
         .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        img { max-width: 100%; height: auto; border-radius: 8px; margin: 20px 0; }
-        nav a { margin: 0 15px; text-decoration: none; color: #007bff; font-weight: bold; }
+        nav a { text-decoration: none; color: #007bff; font-weight: bold; }
         nav a:hover { color: #0056b3; }
+
+        /* 2-column page menu */
+        .menu { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 24px; margin-top: 24px; }
+        .menu a { display: block; text-align: center; }
+        .menu .thumb { display: block; width: 100%; height: auto; aspect-ratio: 3 / 2; overflow: hidden; border-radius: 8px; border: 2px solid #ddd; }
+        .menu .caption { color: #007bff; font-weight: bold; margin: 10px 0 0; }
+        .menu a:hover .caption { color: #0056b3; }
+        .menu a:hover .thumb { border-color: #007bff; }
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .menu { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>NCI Data Analysis</h1>
-        
+
         <p>ยินดีต้อนรับสู่โปรเจกต์วิเคราะห์ข้อมูล NCI เลือกหัวข้อที่สนใจด้านล่าง:</p>
-         
-        <nav style="display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;">
-            <a href="page1.html" style="text-decoration: none; text-align: center;">
-                <img src="image/img1.png" alt="How did patients go for radiation therapy?" style="width: 300px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">How did patients go for radiation therapy?</p>
-            </a>
 
-             <a href="page4.html" style="text-decoration: none; text-align: center;">
-                <img src="image/img1.png" alt="How did patients go for radiation therapy? ( 21 provinces)" style="width: 300px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">How did patients go for radiation therapy? ( 21 provinces)</p>
+        <nav class="menu">
+            <a href="page1.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="How did patients go for radiation therapy?"><rect width="300" height="200" fill="#f0fdfa"/><rect x="35.0" y="28" width="230" height="30" rx="4" fill="#5eead4"/><rect x="60.0" y="68" width="180" height="30" rx="4" fill="#2dd4bf"/><rect x="85.0" y="108" width="130" height="30" rx="4" fill="#14b8a6"/><rect x="110.0" y="148" width="80" height="30" rx="4" fill="#0f766e"/></svg>
+                <p class="caption">How did patients go for radiation therapy?</p>
             </a>
-            
-            <a href="page2.html" style="text-decoration: none; text-align: center;">
-                <img src="image/img2.jpg" alt="กราฟวิเคราะห์" style="width: 300px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">Sim RT to start RT duration</p>
+            <a href="page4.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="How did patients go for radiation therapy? (21 provinces)"><rect width="300" height="200" fill="#eff6ff"/><circle cx="48" cy="52" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="82" cy="52" r="13" fill="#1d4ed8" opacity="1"/><circle cx="116" cy="52" r="13" fill="#1d4ed8" opacity="0.75"/><circle cx="150" cy="52" r="13" fill="#1d4ed8" opacity="0.5"/><circle cx="184" cy="52" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="218" cy="52" r="13" fill="#1d4ed8" opacity="1"/><circle cx="252" cy="52" r="13" fill="#1d4ed8" opacity="0.75"/><circle cx="48" cy="100" r="13" fill="#1d4ed8" opacity="0.75"/><circle cx="82" cy="100" r="13" fill="#1d4ed8" opacity="0.5"/><circle cx="116" cy="100" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="150" cy="100" r="13" fill="#1d4ed8" opacity="1"/><circle cx="184" cy="100" r="13" fill="#1d4ed8" opacity="0.75"/><circle cx="218" cy="100" r="13" fill="#1d4ed8" opacity="0.5"/><circle cx="252" cy="100" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="48" cy="148" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="82" cy="148" r="13" fill="#1d4ed8" opacity="1"/><circle cx="116" cy="148" r="13" fill="#1d4ed8" opacity="0.75"/><circle cx="150" cy="148" r="13" fill="#1d4ed8" opacity="0.5"/><circle cx="184" cy="148" r="13" fill="#1d4ed8" opacity="0.3"/><circle cx="218" cy="148" r="13" fill="#1d4ed8" opacity="1"/><circle cx="252" cy="148" r="13" fill="#1d4ed8" opacity="0.75"/></svg>
+                <p class="caption">How did patients go for radiation therapy? ( 21 provinces)</p>
             </a>
-
-            <a href="page3.html" style="text-decoration: none; text-align: center;">
-                <div style="width: 300px; height: 200px; border-radius: 8px; border: 2px solid #ddd; background: #0d1b2a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                    <div style="font-size: 36px;">🎗️</div>
-                    <div style="color: #00d4ff; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Sankey Diagram</div>
-                    <div style="color: #e8f4fd; font-size: 13px; font-weight: 600;">การคัดกรองมะเร็งปากมดลูก</div>
-                    <div style="color: #7aadcc; font-size: 11px;">ปีงบประมาณ 2566–2568</div>
-                </div>
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">Cervical Cancer Screening Flow</p>
+            <a href="page2.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="Sim RT to start RT duration"><rect width="300" height="200" fill="#fff7ed"/><rect x="30" y="40" width="50" height="8" fill="#fed7aa"/><rect x="80" y="34" width="110" height="20" rx="3" fill="#ea580c"/><circle cx="30" cy="44" r="5" fill="#7c2d12"/><rect x="46" y="74" width="80" height="8" fill="#fed7aa"/><rect x="126" y="68" width="100" height="20" rx="3" fill="#ea580c"/><circle cx="46" cy="78" r="5" fill="#7c2d12"/><rect x="24" y="108" width="36" height="8" fill="#fed7aa"/><rect x="60" y="102" width="150" height="20" rx="3" fill="#ea580c"/><circle cx="24" cy="112" r="5" fill="#7c2d12"/><rect x="60" y="142" width="60" height="8" fill="#fed7aa"/><rect x="120" y="136" width="90" height="20" rx="3" fill="#ea580c"/><circle cx="60" cy="146" r="5" fill="#7c2d12"/></svg>
+                <p class="caption">Sim RT to start RT duration</p>
             </a>
-            <a href="page5.html" style="text-decoration: none; text-align: center;">
-                <img src="image/img1.png" alt="Demo TCB dashboard" style="width: 300px; height: 200px; object-fit: cover; border-radius: 8px; border: 2px solid #ddd;">
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">Demo TCB dashboard)</p>
+            <a href="page3.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="Cervical Cancer Screening Flow"><rect width="300" height="200" fill="#f5f3ff"/><rect x="40" y="40" width="14" height="120" fill="#6d28d9"/><path d="M54 40 C150 40 150 40 246 40 L246 100 C150 100 150 100 54 100 Z" fill="#a78bfa" opacity=".5"/><rect x="246" y="40" width="14" height="60" fill="#6d28d9"/><path d="M54 100 C150 100 150 116 246 116 L246 146 C150 146 150 130 54 130 Z" fill="#a78bfa" opacity=".5"/><rect x="246" y="116" width="14" height="30" fill="#6d28d9"/><path d="M54 130 C150 130 150 160 246 160 L246 190 C150 190 150 160 54 160 Z" fill="#a78bfa" opacity=".5"/><rect x="246" y="160" width="14" height="30" fill="#6d28d9"/></svg>
+                <p class="caption">Cervical Cancer Screening Flow</p>
             </a>
-            <a href="page6.html" style="text-decoration: none; text-align: center;">
-                <div style="width: 300px; height: 200px; border-radius: 8px; border: 2px solid #ddd; background: #0d1b2a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                    <div style="font-size: 36px;">🎗️</div>
-                    <div style="color: #00d4ff; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">Sankey Diagram</div>
-                    <div style="color: #e8f4fd; font-size: 13px; font-weight: 600;">การคัดกรองมะเร็งลำไส้ใหญ่</div>
-                    <div style="color: #7aadcc; font-size: 11px;">ปีงบประมาณ 2567–2568</div>
-                </div>
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">Colorectal Cancer Screening Flow</p>
+            <a href="page5.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="Demo TCB dashboard"><rect width="300" height="200" fill="#fffbeb"/><rect x="22" y="22" width="76" height="40" rx="5" fill="#fde68a"/><rect x="32" y="31" width="30" height="5" fill="#b45309" opacity=".6"/><rect x="32" y="42" width="46" height="10" fill="#b45309"/><rect x="112" y="22" width="76" height="40" rx="5" fill="#fde68a"/><rect x="122" y="31" width="30" height="5" fill="#b45309" opacity=".6"/><rect x="122" y="42" width="38" height="10" fill="#b45309"/><rect x="202" y="22" width="76" height="40" rx="5" fill="#fde68a"/><rect x="212" y="31" width="30" height="5" fill="#b45309" opacity=".6"/><rect x="212" y="42" width="52" height="10" fill="#b45309"/><rect x="30" y="128" width="28" height="50" rx="2" fill="#d97706"/><rect x="74" y="98" width="28" height="80" rx="2" fill="#d97706"/><rect x="118" y="116" width="28" height="62" rx="2" fill="#d97706"/><rect x="162" y="78" width="28" height="100" rx="2" fill="#d97706"/><rect x="206" y="104" width="28" height="74" rx="2" fill="#d97706"/><rect x="250" y="86" width="28" height="92" rx="2" fill="#92400e"/><line x1="20" x2="280" y1="178.5" y2="178.5" stroke="#b45309" opacity=".4"/></svg>
+                <p class="caption">Demo TCB dashboard</p>
             </a>
-             <a href="tcb-ai-coding-mockup-en.html" style="text-decoration: none; text-align: center;">
-                <div style="width: 300px; height: 200px; border-radius: 8px; border: 2px solid #ddd; background: #0d1b2a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                    <div style="font-size: 36px;">🎗️</div>
-                    <div style="color: #00d4ff; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">LLM Mockup</div>
-                    <div style="color: #e8f4fd; font-size: 13px; font-weight: 600;">TCB-mockup</div>
-                    <div style="color: #7aadcc; font-size: 11px;">Mockup</div>
-                </div>
-                <p style="color: #007bff; font-weight: bold; margin-top: 10px;">Colorectal Cancer Screening Flow</p>
+            <a href="page6.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="Colorectal Cancer Screening Flow"><rect width="300" height="200" fill="#fef2f2"/><rect x="40" y="36" width="14" height="128" fill="#b91c1c"/><path d="M54 36 C150 36 150 28 246 28 L246 78 C150 78 150 86 54 86 Z" fill="#f87171" opacity=".5"/><rect x="246" y="28" width="14" height="50" fill="#b91c1c"/><path d="M54 86 C150 86 150 98 246 98 L246 132 C150 132 150 120 54 120 Z" fill="#f87171" opacity=".5"/><rect x="246" y="98" width="14" height="34" fill="#b91c1c"/><path d="M54 120 C150 120 150 138 246 138 L246 162 C150 162 150 144 54 144 Z" fill="#f87171" opacity=".5"/><rect x="246" y="138" width="14" height="24" fill="#b91c1c"/><path d="M54 144 C150 144 150 172 246 172 L246 192 C150 192 150 164 54 164 Z" fill="#f87171" opacity=".5"/><rect x="246" y="172" width="14" height="20" fill="#b91c1c"/></svg>
+                <p class="caption">Colorectal Cancer Screening Flow</p>
+            </a>
+            <a href="tcb-ai-coding-mockup-en.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="TCB AI Coding Mockup"><rect width="300" height="200" fill="#0f172a"/><rect width="300" height="22" fill="#1e293b"/><circle cx="14" cy="11" r="4" fill="#64748b"/><circle cx="28" cy="11" r="4" fill="#64748b"/><circle cx="42" cy="11" r="4" fill="#64748b"/><rect x="20" y="38" width="150" height="38" rx="8" fill="#1e293b"/><rect x="32" y="48" width="110" height="5" rx="2" fill="#475569"/><rect x="32" y="60" width="78" height="5" rx="2" fill="#475569"/><rect x="130" y="88" width="150" height="48" rx="8" fill="#0e7490"/><rect x="142" y="98" width="112" height="5" rx="2" fill="#a5f3fc"/><rect x="142" y="110" width="96" height="5" rx="2" fill="#a5f3fc"/><rect x="142" y="122" width="60" height="5" rx="2" fill="#a5f3fc"/><rect x="20" y="158" width="260" height="26" rx="6" fill="#1e293b" stroke="#334155"/><rect x="32" y="168" width="70" height="5" rx="2" fill="#64748b"/></svg>
+                <p class="caption">TCB AI Coding Mockup</p>
+            </a>
+            <a href="page7.html">
+                <svg class="thumb" viewBox="0 0 300 200" role="img" aria-label="Early stage cancer รายเขตสุขภาพ"><rect width="300" height="200" fill="#f7fee7"/><rect x="18" y="116" width="14" height="60" rx="2" fill="#bfe3a0"/><rect x="35" y="126" width="14" height="50" rx="2" fill="#5fa52e"/><rect x="52" y="136" width="14" height="40" rx="2" fill="#2f6a10"/><rect x="72" y="136" width="14" height="40" rx="2" fill="#bfe3a0"/><rect x="89" y="124" width="14" height="52" rx="2" fill="#5fa52e"/><rect x="106" y="106" width="14" height="70" rx="2" fill="#2f6a10"/><rect x="126" y="106" width="14" height="70" rx="2" fill="#bfe3a0"/><rect x="143" y="112" width="14" height="64" rx="2" fill="#5fa52e"/><rect x="160" y="96" width="14" height="80" rx="2" fill="#2f6a10"/><rect x="180" y="126" width="14" height="50" rx="2" fill="#bfe3a0"/><rect x="197" y="132" width="14" height="44" rx="2" fill="#5fa52e"/><rect x="214" y="138" width="14" height="38" rx="2" fill="#2f6a10"/><rect x="234" y="120" width="14" height="56" rx="2" fill="#bfe3a0"/><rect x="251" y="104" width="14" height="72" rx="2" fill="#5fa52e"/><rect x="268" y="112" width="14" height="64" rx="2" fill="#2f6a10"/><line x1="18" x2="282" y1="176.5" y2="176.5" stroke="#4d7c0f" opacity=".4"/></svg>
+                <p class="caption">Early stage cancer รายเขตสุขภาพ</p>
             </a>
         </nav>
         <br>
