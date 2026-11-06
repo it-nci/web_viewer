@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สัดส่วนระยะเริ่มต้น (Early stage) รายเขตสุขภาพ — Breast / Colon</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #ffffff; --surface: #f6f6f4; --text: #1f1f1d; --muted: #6b6b66;
+    --grid: #e3e3df; --border: #d6d6d0; --accent-bg: #1f1f1d; --accent-fg: #ffffff;
+    --unknown: #6b6b66;
+  }
+  body[data-cancer="breast"] { --s1: #BFE3A0; --s2: #5FA52E; --s3: #2F6A10; }
+  body[data-cancer="colon"]  { --s1: #A8CBEC; --s2: #4F94D4; --s3: #1F5C96; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #1b1b1a; --surface: #262624; --text: #ecece8; --muted: #a2a29b;
+      --grid: #3a3a37; --border: #484844; --accent-bg: #ecece8; --accent-fg: #1b1b1a;
+      --unknown: #a2a29b;
+    }
+    body[data-cancer="breast"] { --s1: #3F6B22; --s2: #5FA52E; --s3: #A9DB7E; }
+    body[data-cancer="colon"]  { --s1: #2F5679; --s2: #3F84C4; --s3: #8CC0F2; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 16px 40px; background: var(--bg); color: var(--text);
+    font-family: "Sarabun", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", Tahoma, sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 16px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 18px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px 28px; margin-bottom: 14px; align-items: flex-end; }
+  .group { display: flex; flex-direction: column; gap: 6px; }
+  .group > span { font-size: 12px; color: var(--muted); }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    font: inherit; font-size: 14px; padding: 7px 14px; border: 0; background: var(--surface);
+    color: var(--text); cursor: pointer; border-right: 1px solid var(--border);
+  }
+  .seg button:last-child { border-right: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent-fg); }
+  .seg button:focus-visible { outline: 2px solid var(--s2); outline-offset: -2px; }
+  .legend { display: flex; gap: 16px; font-size: 13px; padding: 0 0 7px 6px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 10px 8px; }
+  .scroll { overflow-x: auto; }
+  svg { display: block; min-width: 900px; width: 100%; height: auto; }
+  svg text { fill: var(--text); font-family: inherit; }
+  svg text.muted { fill: var(--muted); }
+  svg text.unk { fill: var(--unknown); }
+  .note { font-size: 12.5px; color: var(--muted); margin: 10px 4px 0; }
+  .stats { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; font-size: 13px; }
+  .stat b { display: block; font-size: 18px; font-weight: 600; }
+  .stat small { color: var(--muted); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin-top: 18px; }
+  th, td { padding: 5px 10px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:nth-child(-n+2), td:nth-child(-n+2) { text-align: left; }
+  th { color: var(--muted); font-weight: 500; }
+  tr.first td { border-top: 1px solid var(--border); }
+  #tip {
+    position: fixed; pointer-events: none; z-index: 10; display: none; font-size: 13px;
+    background: var(--accent-bg); color: var(--accent-fg); padding: 8px 11px; border-radius: 8px;
+    line-height: 1.55; box-shadow: 0 4px 14px rgba(0,0,0,.2);
+  }
+  #tip b { font-weight: 600; }
+</style>
+</head>
+<body data-cancer="breast">
+<div class="wrap">
+  <h1 id="title"></h1>
+
+  <div class="controls">
+    <div class="group"><span>ชนิดมะเร็ง</span>
+      <div class="seg" id="g-cancer">
+        <button data-v="breast">Breast</button>
+        <button data-v="colon">Colon</button>
+      </div>
+    </div>
+    <div class="group"><span>การคำนวณ %</span>
+      <div class="seg" id="g-mode">
+        <button data-v="with">With unknown stage</button>
+        <button data-v="without">Without unknown stage</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="legend" id="legend"></div>
+    <div class="scroll"><svg id="chart" role="img"></svg></div>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+<div id="tip"></div>
+
+<script>
+const DATA = {"breast": {"2567": [{"r": 1, "early": 699, "unk": 449, "known": 1141, "total": 1590, "pw": 61.26, "pa": 43.96}, {"r": 2, "early": 405, "unk": 646, "known": 798, "total": 1444, "pw": 50.75, "pa": 28.05}, {"r": 3, "early": 273, "unk": 291, "known": 454, "total": 745, "pw": 60.13, "pa": 36.64}, {"r": 4, "early": 576, "unk": 724, "known": 1067, "total": 1791, "pw": 53.98, "pa": 32.16}, {"r": 5, "early": 619, "unk": 701, "known": 1085, "total": 1786, "pw": 57.05, "pa": 34.66}, {"r": 6, "early": 769, "unk": 557, "known": 1428, "total": 1985, "pw": 53.85, "pa": 38.74}, {"r": 7, "early": 119, "unk": 256, "known": 241, "total": 497, "pw": 49.38, "pa": 23.94}, {"r": 8, "early": 606, "unk": 344, "known": 1152, "total": 1496, "pw": 52.6, "pa": 40.51}, {"r": 9, "early": 687, "unk": 570, "known": 1324, "total": 1894, "pw": 51.89, "pa": 36.27}, {"r": 10, "early": 382, "unk": 121, "known": 744, "total": 865, "pw": 51.34, "pa": 44.16}, {"r": 11, "early": 595, "unk": 730, "known": 919, "total": 1649, "pw": 64.74, "pa": 36.08}, {"r": 12, "early": 200, "unk": 410, "known": 401, "total": 811, "pw": 49.88, "pa": 24.66}, {"r": 13, "early": 421, "unk": 314, "known": 728, "total": 1042, "pw": 57.83, "pa": 40.4}], "2568": [{"r": 1, "early": 559, "unk": 558, "known": 924, "total": 1482, "pw": 60.5, "pa": 37.72}, {"r": 2, "early": 384, "unk": 608, "known": 641, "total": 1249, "pw": 59.91, "pa": 30.74}, {"r": 3, "early": 251, "unk": 339, "known": 395, "total": 734, "pw": 63.54, "pa": 34.2}, {"r": 4, "early": 428, "unk": 926, "known": 833, "total": 1759, "pw": 51.38, "pa": 24.33}, {"r": 5, "early": 579, "unk": 929, "known": 994, "total": 1923, "pw": 58.25, "pa": 30.11}, {"r": 6, "early": 821, "unk": 613, "known": 1434, "total": 2047, "pw": 57.25, "pa": 40.11}, {"r": 7, "early": 78, "unk": 259, "known": 136, "total": 395, "pw": 57.35, "pa": 19.75}, {"r": 8, "early": 546, "unk": 426, "known": 960, "total": 1386, "pw": 56.88, "pa": 39.39}, {"r": 9, "early": 680, "unk": 640, "known": 1237, "total": 1877, "pw": 54.97, "pa": 36.23}, {"r": 10, "early": 445, "unk": 105, "known": 819, "total": 924, "pw": 54.33, "pa": 48.16}, {"r": 11, "early": 385, "unk": 513, "known": 623, "total": 1136, "pw": 61.8, "pa": 33.89}, {"r": 12, "early": 220, "unk": 541, "known": 416, "total": 957, "pw": 52.88, "pa": 22.99}, {"r": 13, "early": 412, "unk": 331, "known": 650, "total": 981, "pw": 63.38, "pa": 42.0}], "2569 Q3": [{"r": 1, "early": 324, "unk": 495, "known": 533, "total": 1028, "pw": 60.79, "pa": 31.52}, {"r": 2, "early": 254, "unk": 231, "known": 434, "total": 665, "pw": 58.53, "pa": 38.2}, {"r": 3, "early": 211, "unk": 254, "known": 327, "total": 581, "pw": 64.53, "pa": 36.32}, {"r": 4, "early": 296, "unk": 808, "known": 525, "total": 1333, "pw": 56.38, "pa": 22.21}, {"r": 5, "early": 396, "unk": 798, "known": 634, "total": 1432, "pw": 62.46, "pa": 27.65}, {"r": 6, "early": 521, "unk": 544, "known": 842, "total": 1386, "pw": 61.88, "pa": 37.59}, {"r": 7, "early": 72, "unk": 182, "known": 107, "total": 289, "pw": 67.29, "pa": 24.91}, {"r": 8, "early": 374, "unk": 358, "known": 717, "total": 1075, "pw": 52.16, "pa": 34.79}, {"r": 9, "early": 349, "unk": 660, "known": 622, "total": 1282, "pw": 56.11, "pa": 27.22}, {"r": 10, "early": 367, "unk": 141, "known": 740, "total": 881, "pw": 49.59, "pa": 41.66}, {"r": 11, "early": 213, "unk": 395, "known": 340, "total": 735, "pw": 62.65, "pa": 28.98}, {"r": 12, "early": 155, "unk": 316, "known": 273, "total": 589, "pw": 56.78, "pa": 26.32}, {"r": 13, "early": 252, "unk": 256, "known": 373, "total": 629, "pw": 67.56, "pa": 40.06}]}, "colon": {"2567": [{"r": 1, "early": 293, "unk": 566, "known": 1082, "total": 1648, "pw": 27.08, "pa": 17.78}, {"r": 2, "early": 206, "unk": 533, "known": 704, "total": 1237, "pw": 29.26, "pa": 16.65}, {"r": 3, "early": 111, "unk": 346, "known": 283, "total": 629, "pw": 39.22, "pa": 17.65}, {"r": 4, "early": 225, "unk": 790, "known": 681, "total": 1471, "pw": 33.04, "pa": 15.3}, {"r": 5, "early": 368, "unk": 851, "known": 980, "total": 1831, "pw": 37.55, "pa": 20.1}, {"r": 6, "early": 355, "unk": 496, "known": 1036, "total": 1532, "pw": 34.27, "pa": 23.17}, {"r": 7, "early": 66, "unk": 201, "known": 174, "total": 375, "pw": 37.93, "pa": 17.6}, {"r": 8, "early": 323, "unk": 352, "known": 1073, "total": 1425, "pw": 30.1, "pa": 22.67}, {"r": 9, "early": 409, "unk": 875, "known": 1420, "total": 2295, "pw": 28.8, "pa": 17.82}, {"r": 10, "early": 181, "unk": 161, "known": 646, "total": 807, "pw": 28.02, "pa": 22.43}, {"r": 11, "early": 265, "unk": 594, "known": 710, "total": 1304, "pw": 37.32, "pa": 20.32}, {"r": 12, "early": 134, "unk": 389, "known": 359, "total": 748, "pw": 37.33, "pa": 17.91}, {"r": 13, "early": 400, "unk": 249, "known": 708, "total": 957, "pw": 56.5, "pa": 41.8}], "2568": [{"r": 1, "early": 464, "unk": 545, "known": 1051, "total": 1596, "pw": 44.15, "pa": 29.07}, {"r": 2, "early": 211, "unk": 490, "known": 592, "total": 1082, "pw": 35.64, "pa": 19.5}, {"r": 3, "early": 147, "unk": 407, "known": 316, "total": 723, "pw": 46.52, "pa": 20.33}, {"r": 4, "early": 235, "unk": 866, "known": 662, "total": 1528, "pw": 35.5, "pa": 15.38}, {"r": 5, "early": 550, "unk": 894, "known": 1135, "total": 2029, "pw": 48.46, "pa": 27.11}, {"r": 6, "early": 570, "unk": 549, "known": 1177, "total": 1726, "pw": 48.43, "pa": 33.02}, {"r": 7, "early": 116, "unk": 249, "known": 205, "total": 454, "pw": 56.59, "pa": 25.55}, {"r": 8, "early": 346, "unk": 431, "known": 972, "total": 1403, "pw": 35.6, "pa": 24.66}, {"r": 9, "early": 423, "unk": 886, "known": 1202, "total": 2088, "pw": 35.19, "pa": 20.26}, {"r": 10, "early": 295, "unk": 151, "known": 842, "total": 993, "pw": 35.04, "pa": 29.71}, {"r": 11, "early": 211, "unk": 360, "known": 466, "total": 826, "pw": 45.28, "pa": 25.54}, {"r": 12, "early": 167, "unk": 461, "known": 455, "total": 916, "pw": 36.7, "pa": 18.23}, {"r": 13, "early": 602, "unk": 291, "known": 859, "total": 1150, "pw": 70.08, "pa": 52.35}], "2569 Q3": [{"r": 1, "early": 285, "unk": 401, "known": 648, "total": 1049, "pw": 43.98, "pa": 27.17}, {"r": 2, "early": 154, "unk": 268, "known": 407, "total": 675, "pw": 37.84, "pa": 22.81}, {"r": 3, "early": 82, "unk": 379, "known": 178, "total": 557, "pw": 46.07, "pa": 14.72}, {"r": 4, "early": 183, "unk": 798, "known": 472, "total": 1270, "pw": 38.77, "pa": 14.41}, {"r": 5, "early": 390, "unk": 659, "known": 732, "total": 1391, "pw": 53.28, "pa": 28.04}, {"r": 6, "early": 396, "unk": 520, "known": 873, "total": 1393, "pw": 45.36, "pa": 28.43}, {"r": 7, "early": 67, "unk": 194, "known": 106, "total": 300, "pw": 63.21, "pa": 22.33}, {"r": 8, "early": 248, "unk": 318, "known": 731, "total": 1049, "pw": 33.93, "pa": 23.64}, {"r": 9, "early": 226, "unk": 941, "known": 639, "total": 1580, "pw": 35.37, "pa": 14.3}, {"r": 10, "early": 262, "unk": 187, "known": 838, "total": 1025, "pw": 31.26, "pa": 25.56}, {"r": 11, "early": 118, "unk": 320, "known": 225, "total": 545, "pw": 52.44, "pa": 21.65}, {"r": 12, "early": 131, "unk": 314, "known": 332, "total": 646, "pw": 39.46, "pa": 20.28}, {"r": 13, "early": 506, "unk": 208, "known": 625, "total": 833, "pw": 80.96, "pa": 60.74}]}};
+const NAMES = { breast: "Breast", colon: "Colon" };
+const state = { cancer: "breast", mode: "with" };
+const years = Object.keys(DATA.breast);                    // 2567, 2568, 2569 Q3
+const ylabel = y => y.replace(" Q3", " Q1–Q3");
+const SERIES = ["--s1", "--s2", "--s3"];
+
+const $ = s => document.querySelector(s);
+const NS = "http://www.w3.org/2000/svg";
+const fmt = n => n.toLocaleString("en-US");
+const pctOf = (d, mode) => mode === "with" ? d.pa : d.pw;
+
+for (const [id, key] of [["#g-cancer", "cancer"], ["#g-mode", "mode"]])
+  $(id).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    state[key] = b.dataset.v; render();
+  });
+
+function el(name, attrs = {}, text) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text !== undefined) e.textContent = text;
+  return e;
+}
+
+function showTip(ev, d, y) {
+  const t = $("#tip");
+  t.innerHTML =
+    `<b>เขต ${d.r}</b> · ${NAMES[state.cancer]} ${ylabel(y)}<br>` +
+    `Early stage: ${fmt(d.early)}<br>` +
+    `Known stage: ${fmt(d.known)}<br>` +
+    `Unknown: ${fmt(d.unk)}<br>` +
+    `All cases: ${fmt(d.total)}<br>` +
+    `% without unknown: <b>${d.pw.toFixed(2)}</b><br>` +
+    `% with unknown: <b>${d.pa.toFixed(2)}</b>`;
+  t.style.display = "block";
+  const w = t.offsetWidth, h = t.offsetHeight;
+  let x = ev.clientX + 14, yy = ev.clientY + 14;
+  if (x + w > innerWidth - 8) x = ev.clientX - w - 14;
+  if (yy + h > innerHeight - 8) yy = ev.clientY - h - 14;
+  t.style.left = x + "px"; t.style.top = yy + "px";
+}
+const hideTip = () => { $("#tip").style.display = "none"; };
+
+function render() {
+  document.body.dataset.cancer = state.cancer;
+  for (const [id, key] of [["#g-cancer", "cancer"], ["#g-mode", "mode"]])
+    $(id).querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state[key]));
+
+  const showUnk = state.mode === "without";
+  const lookup = {};   // lookup[year][region]
+  years.forEach(y => lookup[y] = Object.fromEntries(DATA[state.cancer][y].map(d => [d.r, d])));
+
+  // legend
+  $("#legend").innerHTML = years.map((y, i) =>
+    `<span><i style="background:var(${SERIES[i]})"></i>${ylabel(y)}</span>`).join("");
+
+  // geometry
+  const W = 1100;
+  const rowH = 17;                                   // height of each unknown row
+  const m = { l: 100, r: 14, t: 24, b: showUnk ? 82 + years.length * rowH : 62 };
+  const H = 340 + m.b;
+  const pw = W - m.l - m.r, ph = H - m.t - m.b;
+  const svg = $("#chart");
+  svg.innerHTML = "";
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  svg.setAttribute("aria-label", `Grouped bar chart: ${NAMES[state.cancer]} early stage % by health region`);
+
+  // grid + y axis
+  for (let v = 0; v <= 100; v += 20) {
+    const y = m.t + ph - (v / 100) * ph;
+    svg.appendChild(el("line", { x1: m.l, x2: W - m.r, y1: y, y2: y, stroke: "var(--grid)" }));
+    svg.appendChild(el("text", { x: m.l - 8, y: y + 4, "text-anchor": "end", "font-size": 12, class: "muted" }, v + "%"));
+  }
+  svg.appendChild(el("text", { x: 40, y: m.t + ph / 2, "font-size": 12, class: "muted",
+    transform: `rotate(-90 40 ${m.t + ph / 2})`, "text-anchor": "middle" }, "% Early stage"));
+
+  // grouped bars
+  const slot = pw / 13, n = years.length;
+  const bw = Math.min(24, (slot * 0.84 - 3 * (n - 1)) / n), gap = 3;
+  const groupW = n * bw + (n - 1) * gap;
+  const axisY = m.t + ph;
+
+  for (let r = 1; r <= 13; r++) {
+    const cx = m.l + slot * (r - 1) + slot / 2;
+    svg.appendChild(el("text", { x: cx, y: axisY + 20, "text-anchor": "middle", "font-size": 13, "font-weight": 600 }, r));
+
+    years.forEach((y, i) => {
+      const d = lookup[y][r];
+      const x = cx - groupW / 2 + i * (bw + gap);
+      if (!d) return;
+      const v = pctOf(d, state.mode);
+      const bh = (v / 100) * ph, top = axisY - bh;
+      const bar = el("rect", { x, y: top, width: bw, height: Math.max(bh, 0.5), rx: 2.5, fill: `var(${SERIES[i]})`, tabindex: 0 });
+      bar.style.cursor = "pointer";
+      bar.addEventListener("mousemove", e => showTip(e, d, y));
+      bar.addEventListener("mouseleave", hideTip);
+      bar.addEventListener("touchstart", e => showTip(e.touches[0], d, y), { passive: true });
+      bar.addEventListener("focus", () => { const b = bar.getBoundingClientRect(); showTip({ clientX: b.right, clientY: b.top }, d, y); });
+      bar.addEventListener("blur", hideTip);
+      svg.appendChild(bar);
+      svg.appendChild(el("text", { x: x + bw / 2, y: top - 4, "text-anchor": "middle", "font-size": 9.5 }, v.toFixed(1)));
+    });
+
+    // unknown counts: one row per year, under the axis
+    if (showUnk) {
+      years.forEach((y, i) => {
+        const d = lookup[y][r]; if (!d) return;
+        svg.appendChild(el("text", { x: cx, y: axisY + 64 + i * rowH, "text-anchor": "middle", "font-size": 11.5, class: "unk" }, fmt(d.unk)));
+      });
+    }
+  }
+
+  if (showUnk) {
+    const ly = axisY + 32;
+    svg.appendChild(el("line", { x1: 8, x2: W - m.r, y1: ly, y2: ly, stroke: "var(--grid)" }));
+    svg.appendChild(el("text", { x: m.l - 8, y: axisY + 48, "text-anchor": "end", "font-size": 11, "font-weight": 600, class: "muted" }, "Unknown (n)"));
+    years.forEach((y, i) => {
+      const yy = axisY + 64 + i * rowH;
+      svg.appendChild(el("rect", { x: 14, y: yy - 9, width: 9, height: 9, rx: 2, fill: `var(${SERIES[i]})` }));
+      svg.appendChild(el("text", { x: m.l - 8, y: yy, "text-anchor": "end", "font-size": 11, class: "unk" }, ylabel(y)));
+    });
+  }
+  svg.appendChild(el("text", { x: m.l + pw / 2, y: H - 8, "text-anchor": "middle", "font-size": 12, class: "muted" }, "เขตสุขภาพ (Health region)"));
+
+  // title / note
+  $("#title").textContent = "Early stage cancer รายเขตสุขภาพ";
+  const TARGET = { breast: 55, colon: 30 };
+  $("#note").textContent = showUnk
+    ? `ตัวชี้วัด service plan สาขาโรคมะเร็งปี 70 กำหนดสัดส่วนผู้ป่วย early stage มากกว่า ${TARGET[state.cancer]}%`
+    : "วางเมาส์บนแท่งเพื่อดูรายละเอียด";
+
+}
+render();
+</script>
+</body>
+</html>
